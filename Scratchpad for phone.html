@@ -73,8 +73,9 @@
       #app.sbh { grid-template-columns: 0 0 minmax(0, 1fr) }
       .dark #app { background: rgb(var(--n950)) }
       #mb, #st, #ab { background: transparent; border: 0 }
-      #st { padding: 0 4px }
-      #st > * { border-radius: 6px; padding: 2px 8px }
+      #st { padding: 0 4px; font-size: 12px; color: rgb(var(--n700)) }
+      .dark #st { color: rgb(var(--n300)) }
+      #st > * { border-radius: 6px; padding: 2px 10px }
       #st > button:hover, #st > [data-a]:hover { background: rgb(var(--n500) / .15) }
       #sb { margin-right: 8px; padding-top: 44px; background: rgb(var(--n50)); border: 1px solid rgb(var(--n300)); border-radius: 12px; overflow: hidden; box-shadow: 0 1px 2px rgb(0 0 0 / .04) }
       .dark #sb { background: rgb(var(--n900)); border-color: rgb(var(--n800)) }
@@ -128,9 +129,9 @@
 #ed .cm-line{padding:0}
 #ed .cm-placeholder{color:rgb(var(--n500))}
 #ed .cm-placeholder:has(.wph){position:relative;display:inline-block}
-.wph{position:absolute;left:16px;top:-.12em;width:max-content;max-width:calc(100vw - 120px);font-family:ui-sans-serif,system-ui,sans-serif;line-height:1.5;user-select:none}
+.wph{position:absolute;white-space:normal;left:16px;top:-.12em;width:max-content;max-width:min(40em,calc(100vw - 120px));font-family:ui-sans-serif,system-ui,sans-serif;line-height:1.5;user-select:none}
 .wph-t{line-height:1.2;font-size:1.9em;font-weight:600;letter-spacing:-.01em;color:rgb(var(--n700))}.dark .wph-t{color:rgb(var(--n200))}
-.wph-s{font-size:.95em;margin-top:2px}
+.wph-s{font-size:.95em;margin-top:6px;text-wrap:balance}.wph-s+.wph-s{margin-top:12px}
 .wph-g{display:grid;grid-template-columns:max-content auto;gap:8px 16px;align-items:center;margin-top:22px;font-size:.9em}
 .wph-g kbd{font:inherit;font-size:.85em;padding:2px 8px;border-radius:6px;border:1px solid rgb(var(--n300));background:rgb(var(--n100));color:rgb(var(--n600))}
 .dark .wph-g kbd{border-color:rgb(var(--n700));background:rgb(var(--n800));color:rgb(var(--n300))}
@@ -218,12 +219,11 @@
         class="pointer-events-none absolute bottom-2 right-3.5 [#app.kb_&]:hidden rounded-full bg-slate-50 px-2.5 py-0.5 text-xs text-slate-500 dark:bg-slate-900 dark:text-slate-400">
       </div>
     </div>
-    <div id="fb" class="flex h-12 shrink-0 items-center gap-1 overflow-x-auto [#app:not(:has(.cm-content:focus))_&]:hidden [#app.fo_&]:hidden border-t border-slate-200 bg-white px-2 [scrollbar-width:none] dark:border-slate-700 dark:bg-slate-800">
+    <div id="fb" class="flex h-12 shrink-0 items-center gap-1 overflow-x-auto [#app:not(:has(.cm-content:focus))_&]:hidden [#app.fo_&]:hidden border-t border-slate-200 bg-white pl-2 pr-0 [scrollbar-width:none] dark:border-slate-700 dark:bg-slate-800">
       <button data-f="c" aria-label="Checkbox" class="h-11 min-w-[44px] shrink-0 rounded-lg px-3 font-mono text-[15px] font-medium text-slate-600 active:bg-slate-100 dark:text-slate-300 dark:active:bg-slate-700">[ ]</button>
       <button data-f="x" aria-label="Tick or untick checkbox" class="h-11 min-w-[44px] shrink-0 rounded-lg px-3 font-mono text-[15px] font-medium text-slate-600 active:bg-slate-100 dark:text-slate-300 dark:active:bg-slate-700">[x]</button>
       <button data-f="b" aria-label="Bullet list" class="h-11 min-w-[44px] shrink-0 rounded-lg px-3 font-mono text-[17px] font-medium text-slate-600 active:bg-slate-100 dark:text-slate-300 dark:active:bg-slate-700">•</button>
       <button data-f="n" aria-label="Numbered list" class="h-11 min-w-[44px] shrink-0 rounded-lg px-3 font-mono text-[15px] font-medium text-slate-600 active:bg-slate-100 dark:text-slate-300 dark:active:bg-slate-700">1.</button>
-      <button data-f="s" aria-label="Strikethrough" class="h-11 min-w-[44px] shrink-0 rounded-lg px-3 font-mono text-[15px] font-medium text-slate-600 active:bg-slate-100 dark:text-slate-300 dark:active:bg-slate-700"><span class="line-through">S</span></button>
       <button data-f="out" aria-label="Outdent" class="h-11 min-w-[44px] shrink-0 rounded-lg px-3 font-mono text-[17px] font-medium text-slate-600 active:bg-slate-100 dark:text-slate-300 dark:active:bg-slate-700">⇤</button>
       <button data-f="in" aria-label="Indent" class="h-11 min-w-[44px] shrink-0 rounded-lg px-3 font-mono text-[17px] font-medium text-slate-600 active:bg-slate-100 dark:text-slate-300 dark:active:bg-slate-700">⇥</button>
     </div>
@@ -376,7 +376,7 @@
       ed.set({ readOnly: ro, wrap: S.wrap !== false, ln: !!S.ln && !wl, spellcheck: S.spell !== false, autocorrect: S.spell === false ? "off" : "on", placeholder: wl ? WPH : "Start typing" });
       $("#ed").classList.toggle("ro", ro); $("#ed").classList.toggle("sans", S.font === "sans"); { const cf = S.font && S.font !== "mono" && S.font !== "sans"; $("#ed").classList.toggle("cf", !!cf); if (cf) $("#ed").style.setProperty("--ff", '"' + S.font.replace(/"/g, "") + '", ui-monospace, monospace') } document.documentElement.style.setProperty("--fs", S.fs + "px"); ed.remeasure && ed.remeasure();
       $("#wsb").innerHTML = ic("fold", "size-[18px] stroke-[1.8] " + tx(F[t.f])) + `<span>${esc(F[t.f].n)}</span>` + ic("chev", "size-[18px] stroke-[1.8]");
-      $("#tabs").innerHTML = S.tabs.map((x, i) => `<button role="tab" aria-selected="${i === S.cur}" class="${TAB}${i === S.cur ? TON : TOFF}" data-a="tab" data-i="${i}"><span class="size-2 shrink-0 rounded-full ${dot(F[x.f])}"></span><span class="min-w-0 truncate py-1 leading-normal">${esc(D(x))}</span><span data-a="tcl" data-i="${i}" role="button" aria-label="Close tab" class="${i === S.cur ? "" : "invisible group-hover/t:visible "}-mr-1 grid size-5 shrink-0 place-items-center rounded text-slate-500 hover:bg-slate-200 active:bg-slate-300 dark:text-slate-400 dark:hover:bg-slate-700">${ic("x", "size-3.5 stroke-2")}</span></button>`).join("") +`<button data-a="new" aria-label="New tab" class="grid w-9 shrink-0 place-items-center rounded-lg text-slate-500 active:bg-slate-200/70 dark:text-slate-400 dark:active:bg-slate-700">${ic("plus", "size-5 stroke-[1.8]")}</button>`;
+      $("#tabs").innerHTML = S.tabs.map((x, i) => `<button role="tab" aria-selected="${i === S.cur}" class="${TAB}${i === S.cur ? TON : TOFF}" data-a="tab" data-i="${i}" title="${esc(F[x.f].n)}"><span class="size-2 shrink-0 rounded-full ${dot(F[x.f])}"></span><span class="min-w-0 truncate py-1 leading-normal">${esc(D(x))}</span><span data-a="tcl" data-i="${i}" role="button" aria-label="Close tab" class="${i === S.cur ? "" : "invisible group-hover/t:visible "}-mr-1 grid size-5 shrink-0 place-items-center rounded text-slate-500 hover:bg-slate-200 active:bg-slate-300 dark:text-slate-400 dark:hover:bg-slate-700">${ic("x", "size-3.5 stroke-2")}</span></button>`).join("") +`<button data-a="new" aria-label="New tab" class="grid w-9 shrink-0 place-items-center rounded-lg text-slate-500 active:bg-slate-200/70 dark:text-slate-400 dark:active:bg-slate-700">${ic("plus", "size-5 stroke-[1.8]")}</button>`;
       const a = $("#tabs .on"); if (a) $("#tabs").scrollLeft = a.offsetLeft - 70;
       banner(b, t); const w = WC = wc(t.t);
       $("#ct").textContent = `${w} word${w === 1 ? "" : "s"}, ${t.t.length} characters`; $("#gc").textContent = S.tabs.length;
@@ -395,22 +395,16 @@
     // the empty Welcome tab: a short guide shown as the editor's placeholder
     const WPH = (() => {
       const d = document.createElement("div"), el = (t, c, x) => { const e = document.createElement(t); e.className = c; e.textContent = x; return e };
-      d.className = "wph"; d.append(el("div", "wph-t", "Start typing"), el("div", "wph-s", "Everything saves itself. No file to create, no button to press."));
-      if (matchMedia("(min-width:900px)").matches) {
-        const g = el("div", "wph-g", "");
-        [["Ctrl+Alt+N", "New tab"], ["Ctrl+P", "Jump to any tab"], ["Ctrl+Shift+F", "Search every tab"], ["Ctrl+O", "Open a file"], ["Ctrl+Shift+P", "All commands"]].forEach(([k, l]) => g.append(el("kbd", "", k), el("span", "", l)));
-        d.append(g)
-      } else d.append(el("div", "wph-s", "Tap + for a new tab. Paste, type or open a file."));
+      d.className = "wph"; d.append(el("div", "wph-t", "Start typing"), el("div", "wph-s", "A rough notebook. Notes stay in this browser only."), el("div", "wph-s", "Clearing the cache or site data deletes them, so download what you want to keep."));
       return d
     })();
     function wlR(t) {
       $("#wl").classList.add("hidden"); // the empty editor shows its Start typing placeholder instead
     }
-    $("#fb [data-f=s]").insertAdjacentHTML("beforebegin", [["ul", "Underline", "<span class=\"underline\">U</span>"], ["bo", "Bold", "<b>B</b>"], ["it", "Italic", "<i>I</i>"], ["mo", "Monospace", "𝙼"], ["sp", "Superscript", "x²"], ["sb", "Subscript", "x₂"]].map(x => `<button data-f="${x[0]}" aria-label="${x[1]}" class="h-11 min-w-[44px] shrink-0 rounded-lg px-3 font-mono text-[15px] font-medium text-slate-600 active:bg-slate-100 dark:text-slate-300 dark:active:bg-slate-700">${x[2]}</button>`).join(""));
-    $("#fb [data-f=out]").insertAdjacentHTML("beforebegin", [["d", "Dash list", "-"], ["q", "Quote", ">"], ["h", "Heading, tap again for smaller levels", "H"], ["e", "Banner heading", "==="], ["u", "Upper case or Title Case", "AA"], ["v", "Divider, tap again to change style", "─"]].map(x => `<button data-f="${x[0]}" aria-label="${x[1]}" class="h-11 min-w-[44px] shrink-0 rounded-lg px-3 font-mono text-[15px] font-medium text-slate-600 active:bg-slate-100 dark:text-slate-300 dark:active:bg-slate-700">${x[2]}</button>`).join(""));
+    $("#fb [data-f=out]").insertAdjacentHTML("beforebegin", [["d", "Dash list", "-"], ["q", "Quote", ">"], ["h", "Heading, tap again for smaller levels", "H"], ["u", "Upper case or Title Case", "AA"]].map(x => `<button data-f="${x[0]}" aria-label="${x[1]}" class="h-11 min-w-[44px] shrink-0 rounded-lg px-3 font-mono text-[15px] font-medium text-slate-600 active:bg-slate-100 dark:text-slate-300 dark:active:bg-slate-700">${x[2]}</button>`).join(""));
     const FBB = "h-11 min-w-[44px] shrink-0 rounded-lg px-3 text-slate-600 active:bg-slate-100 dark:text-slate-300 dark:active:bg-slate-700";
     $("#fb").insertAdjacentHTML("afterbegin", `<button data-f="un" aria-label="Undo" class="${FBB}">${ic("undo", "size-5 stroke-[1.8]")}</button><button data-f="re" aria-label="Redo" class="${FBB}">${ic("redo", "size-5 stroke-[1.8]")}</button>`);
-    $("#fb").insertAdjacentHTML("beforeend", `<button data-f="cu" class="${FBB} whitespace-nowrap text-[14px] font-medium">Clean up</button><button data-f="kb" aria-label="Hide keyboard" class="${FBB} sticky right-0 ml-auto bg-white dark:bg-slate-800">${ic("kbd", "size-5 stroke-[1.8]")}</button>`);
+    $("#fb").insertAdjacentHTML("beforeend", `<button data-f="cu" class="${FBB} whitespace-nowrap text-[14px] font-medium">Clean up</button><button data-f="kb" aria-label="Hide keyboard" class="${FBB} sticky right-0 ml-auto rounded-r-none bg-white pl-4 pr-4 dark:bg-slate-800">${ic("kbd", "size-5 stroke-[1.8]")}</button>`);
     $("#fb").onmousedown = e => e.preventDefault();
     $("#fb").addEventListener("click", e => {
       const b = e.target.closest("[data-f]"); if (!b) return; const f = b.dataset.f;
@@ -601,6 +595,7 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
         tdup: () => { const x = S.tabs[i]; S.tabs.splice(i + 1, 0, { t: x.t, f: x.f, n: x.n && x.n + " copy", x: x.x }); if (S.cur > i) S.cur++; close(); afterTabs(); toast("Duplicated") },
         tnew: () => { const h = "#note-" + tid(S.tabs[i]); close(); flush(); window.open(location.href.split("#")[0] + h, "_blank") },
         tcopy: () => { close(); (navigator.clipboard ? navigator.clipboard.writeText(S.tabs[i].t) : Promise.reject()).then(() => toast("Copied"), () => toast("Couldn’t copy")) },
+        tdl: () => { const t = S.tabs[i]; if (t) { dlF(fileOf(t), t.t); toast(`Downloaded ${fileOf(t)}`) } },
         tcl: () => closeT(i), cus: cuS, cu: () => cuGo(v),
         share: () => { close(); if (!navigator.share) return (navigator.clipboard ? navigator.clipboard.writeText(t.t) : Promise.reject()).then(() => toast("Sharing isn’t available here, so the text was copied"), () => toast("Couldn’t share or copy")); navigator.share({ title: T(t), text: t.t }).catch(() => { }) },
         dl: () => { close(); MBA.dl() },
@@ -691,7 +686,7 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
         ``
     }
     // one note as a sidebar card (class cd: right-click or long-press opens its tab menu)
-    const fRow = (x, i) => `<div class="cd group/r relative rounded-md ${i === S.cur ? "nc-on" : "hover:bg-slate-500/5"}" data-i="${i}"><button data-a="ovo" data-i="${i}" class="flex h-8 w-full min-w-0 items-center gap-2.5 px-3 ${x.s ? "pr-14" : "pr-8 group-hover/r:pr-14"} text-left"><span class="ni ${tx(F[x.f])}">${ic("doc", "size-4 stroke-2")}</span><span class="truncate ${i === S.cur ? "font-semibold" : ""}">${esc(D(x))}</span></button><button data-a="tstar" data-i="${i}" aria-label="${x.s ? "Unstar" : "Star"}" title="${x.s ? "Unstar" : "Star"}" class="${SBB} absolute right-7 top-1 ${x.s ? "grid !text-amber-500 dark:!text-amber-400" : "hidden group-hover/r:grid"}">${ic("star", "size-4 stroke-2" + (x.s ? " !fill-current" : ""))}</button><button data-a="tcl" data-i="${i}" aria-label="Close tab" title="Close" class="${SBB} absolute right-1.5 top-1 hidden group-hover/r:grid">${ic("x", "size-3.5 stroke-2")}</button></div>`;
+    const fRow = (x, i) => `<div class="cd group/r relative rounded-md ${i === S.cur ? "nc-on" : "hover:bg-slate-500/5"}" data-i="${i}"><button data-a="ovo" data-i="${i}" class="flex h-8 w-full min-w-0 items-center gap-2.5 px-3 ${x.s ? "pr-14 group-hover/r:pr-[5.25rem]" : "pr-8 group-hover/r:pr-[5.25rem]"} text-left"><span class="ni ${tx(F[x.f])}">${ic("doc", "size-4 stroke-2")}</span><span class="truncate ${i === S.cur ? "font-semibold" : ""}">${esc(D(x))}</span></button><button data-a="tdl" data-i="${i}" aria-label="Download" title="Download" class="${SBB} absolute right-[3.25rem] top-1 hidden group-hover/r:grid">${ic("dl", "size-4 stroke-2")}</button><button data-a="tstar" data-i="${i}" aria-label="${x.s ? "Unstar" : "Star"}" title="${x.s ? "Unstar" : "Star"}" class="${SBB} absolute right-7 top-1 ${x.s ? "grid !text-amber-500 dark:!text-amber-400" : "hidden group-hover/r:grid"}">${ic("star", "size-4 stroke-2" + (x.s ? " !fill-current" : ""))}</button><button data-a="tcl" data-i="${i}" aria-label="Close tab" title="Close" class="${SBB} absolute right-1.5 top-1 hidden group-hover/r:grid">${ic("x", "size-3.5 stroke-2")}</button></div>`;
     // the Library list: filtered by folder and name, then recently closed notes
     function nlR() {
       const q = NQ.trim().toLowerCase(), ok = x => (SF < 0 || x.f === SF) && (!q || D(x).toLowerCase().includes(q));
@@ -701,16 +696,16 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
         (cs.length ? `<div class="px-3 pb-1 pt-4 text-[11px] font-medium text-slate-400">Recently closed</div>` + cs.map(([x, i]) => `<div class="group/r relative rounded-md hover:bg-slate-500/5"><button data-a="hopen" data-i="${i}" title="Closed. Click to reopen." class="flex h-8 w-full min-w-0 items-center gap-2.5 px-3 pr-8 text-left text-slate-500 dark:text-slate-400"><span class="text-slate-400">${ic("doc", "size-4 stroke-2")}</span><span class="truncate">${esc(D(x))}</span></button><button data-a="hdel" data-i="${i}" aria-label="Delete file" title="Delete file" class="${SBB} absolute right-1.5 top-1 hidden group-hover/r:grid">${ic("x", "size-3.5 stroke-2")}</button></div>`).join("") : "")
     }
     function sbR() {
-      const p = S.sp || "e", h = (l, x = "") => `<div class="flex h-12 shrink-0 items-center gap-1 px-4 text-[15px] font-semibold text-slate-800 dark:text-slate-100">${l}<div class="flex-1"></div>${x}</div>`, L = s => `<div class="min-h-0 flex-1 overflow-y-auto px-1.5 pb-3">${s}</div>`;
+      const p = S.sp || "e", h = (l, x = "") => `<div class="flex h-12 shrink-0 items-center gap-1 pl-3 pr-3.5 text-[15px] font-semibold text-slate-800 dark:text-slate-100">${l}<div class="flex-1"></div>${x}</div>`, L = s => `<div class="min-h-0 flex-1 overflow-y-auto px-1.5 pb-3">${s}</div>`;
       let o;
       if (p === "e") {
         if (SF >= F.length) SF = -1;
         const cnt = k => S.tabs.filter(x => !x.w && (k < 0 || x.f === k)).length, cf = SF < 0 ? null : F[SF], mi = (k, l, dt) => `<button data-a="sf" data-i="${k}" class="flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13px] hover:bg-slate-500/10 ${SF === k ? "font-semibold" : ""}">${dt}<span class="min-w-0 flex-1 truncate">${l}</span><span class="text-xs text-slate-400">${cnt(k) || ""}</span></button>`;
         const bt = (cf ? `<button data-a="fe" data-i="${SF}" class="${SBB}" aria-label="Edit folder" title="Edit folder">${ic("edit", "size-4 stroke-2")}</button>` : "") + `<button ${cf ? `data-a="nt" data-i="${SF}"` : 'data-a="new"'} class="${SBB}" aria-label="New note" title="New note (Ctrl+N)">${ic("plus", "size-4 stroke-2")}</button><button data-a="nf" class="${SBB}" aria-label="New folder" title="New folder">${ic("fold", "size-4 stroke-2")}</button>`;
         o =
-          `<div class="relative flex shrink-0 items-center gap-1 px-3 pb-2 pt-1"><button data-a="sfm" aria-expanded="${!!SFO}" class="flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13px] hover:bg-slate-500/10">${cf ? `<span class="size-2 shrink-0 rounded-full ${dot(cf)}"></span>` : ic("tabs", "size-4 stroke-2 text-slate-400")}<span class="min-w-0 flex-1 truncate font-medium">${cf ? esc(cf.n) : "All folders"}</span><span class="text-xs text-slate-400">${cnt(SF)}</span>${ic("chev", "size-4 stroke-2 text-slate-400 transition-transform " + (SFO ? "rotate-180" : ""))}</button>${bt}` +
+          `<div class="relative flex shrink-0 items-center gap-1 px-3 pb-2 pt-3"><button data-a="sfm" aria-expanded="${!!SFO}" class="flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13px] hover:bg-slate-500/10">${cf ? `<span class="size-2 shrink-0 rounded-full ${dot(cf)}"></span>` : ic("tabs", "size-4 stroke-2 text-slate-400")}<span class="min-w-0 flex-1 truncate font-medium">${cf ? esc(cf.n) : "All folders"}</span><span class="text-xs text-slate-400">${cnt(SF) ? cnt(SF) + " open" : ""}</span>${ic("chev", "size-4 stroke-2 text-slate-400 transition-transform " + (SFO ? "rotate-180" : ""))}</button>${bt}` +
           (SFO ? `<div id="sfmenu" class="absolute inset-x-3 top-10 z-10 rounded-lg border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-800">` + mi(-1, "All folders", ic("tabs", "size-4 stroke-2 text-slate-400")) + F.map((f, k) => mi(k, esc(f.n), `<span class="size-2 shrink-0 rounded-full ${dot(f)}"></span>`)).join("") + `</div>` : "") + `</div>` +
-          `<div class="flex shrink-0 items-center gap-1 px-3 pb-2"><label class="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-lg bg-slate-500/10 px-2.5 text-slate-500 dark:text-slate-400">${ic("find", "size-4 stroke-2")}<input id="nq" value="${esc(NQ)}" placeholder="Search" autocomplete="off" aria-label="Filter notes by name" class="min-w-0 flex-1 bg-transparent text-[13px] text-slate-900 outline-none placeholder:text-slate-500 dark:text-slate-100 dark:placeholder:text-slate-400"></label><button data-a="ssm" aria-expanded="${!!SSM}" class="${SBB} !size-8" aria-label="Sort" title="Sort: ${(SRT.find(r => r[0] === S.so) || SRT[0])[1]}">${ic("srt", "size-4 stroke-2")}</button></div>` +
+          `<div class="flex shrink-0 items-center gap-1 px-3 pb-2"><label class="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-lg bg-slate-500/10 px-2.5 text-slate-500 dark:text-slate-400">${ic("find", "size-4 stroke-2")}<input id="nq" value="${esc(NQ)}" placeholder="Filter notes" autocomplete="off" aria-label="Filter notes by name" class="min-w-0 flex-1 bg-transparent text-[13px] text-slate-900 outline-none placeholder:text-slate-500 dark:text-slate-100 dark:placeholder:text-slate-400"></label><button data-a="ssm" aria-expanded="${!!SSM}" class="${SBB} !size-8" aria-label="Sort" title="Sort: ${(SRT.find(r => r[0] === S.so) || SRT[0])[1]}">${ic("srt", "size-4 stroke-2")}</button></div>` +
           (SSM ? `<div id="ssmenu" class="absolute right-3 top-[148px] z-10 w-52 rounded-lg border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-800">` + SRT.map(([k, l]) => `<button data-a="ss" data-v="${k}" class="flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13px] hover:bg-slate-500/10 ${(S.so || "o") === k ? "font-semibold" : ""}"><span class="grid size-4 place-items-center text-violet-600 dark:text-violet-400">${(S.so || "o") === k ? ic("chk", "size-4 stroke-2") : ""}</span>${l}</button>`).join("") + `</div>` : "") +
           L(`<div id="nl">${nlR()}</div>`)
       } else if (p === "s") {
@@ -721,8 +716,8 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
         const xs = S.tabs.map((x, i) => [x, i]).filter(r => r[0].s);
         o = h("Starred") + L(xs.length ? xs.map(([x, i]) => fRow(x, i)).join("") : `<div class="px-2 py-1 text-slate-500 dark:text-slate-400">No starred tabs yet. Use the star in the menu to star a tab.</div>`)
       } else {
-        o = h("History", S.closed.length ? `<button data-a="hclr" class="rounded px-1.5 py-0.5 normal-case tracking-normal text-red-600 hover:bg-slate-200 dark:text-red-400 dark:hover:bg-slate-800">Clear all</button>` : "") +
-          L(S.closed.length ? S.closed.map((x, i) => !x.t.trim() ? "" : `<div class="group/r relative flex items-center"><button data-a="hopen" data-i="${i}" class="${SBI} pr-7" title="Reopen"><span class="truncate">${esc(D(x))}</span><span class="ml-auto shrink-0 text-slate-400">${esc(F[x.f].n)}</span></button><button data-a="hdel" data-i="${i}" aria-label="Remove from History" title="Remove from History" class="${SBB} absolute right-0.5 hidden group-hover/r:grid">${ic("x", "size-3.5 stroke-2")}</button></div>`).join("") : `<div class="px-2 py-1 text-slate-500 dark:text-slate-400">No closed tabs yet.</div>`)
+        o = h("History", S.closed.length ? `<button data-a="hclr" class="-mr-1.5 rounded px-1.5 py-0.5 normal-case tracking-normal text-red-600 hover:bg-slate-200 dark:text-red-400 dark:hover:bg-slate-800">Clear all</button>` : "") + `<div class="mx-3 mb-1.5 shrink-0 border-b border-slate-200 dark:border-slate-700"></div>` +
+          L(S.closed.length ? S.closed.map((x, i) => !x.t.trim() ? "" : `<div class="group/r relative flex items-center"><button data-a="hopen" data-i="${i}" class="${SBI} pr-8" title="Reopen"><span class="truncate">${esc(D(x))}</span><span class="ml-auto shrink-0 text-slate-400">${esc(F[x.f].n)}</span></button><button data-a="hdel" data-i="${i}" aria-label="Remove from History" title="Remove from History" class="${SBB} absolute right-0.5">${ic("x", "size-3.5 stroke-2")}</button></div>`).join("") : `<div class="px-2 py-1 text-slate-500 dark:text-slate-400">No closed tabs yet.</div>`)
       }
       $("#sbc").innerHTML = o;
       if (p === "e") $("#nq").oninput = e => { NQ = e.target.value; $("#nl").innerHTML = nlR() };
