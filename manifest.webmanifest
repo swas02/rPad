@@ -1,0 +1,14 @@
+﻿{
+  "name": "Just Perfect Rough Notepad",
+  "short_name": "Notepad",
+  "description": "A fast plain-text scratchpad. Notes stay on this device.",
+  "start_url": "./Scratchpad%20for%20phone.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#8b5cf6",
+  "theme_color": "#190f2a",
+  "icons": [
+    { "src": "assets/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "assets/icon-maskable.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- a slightly tilted yellow note with a folded corner and a flat shadow, no background -->
+  <g transform="translate(256 262) scale(1.18) translate(-256 -262) rotate(-6 256 256)">
+    <path d="M146 122H334L402 190V420Q402 436 386 436H162Q146 436 146 420V138Q146 122 162 122Z" fill="#000" opacity=".18"/>
+    <path d="M128 100H316L384 168V400Q384 416 368 416H144Q128 416 128 400V116Q128 100 144 100Z" fill="#fde047"/>
+    <path d="M316 100V152Q316 168 332 168H384Z" fill="#fef9c3"/>
+    <g fill="none" stroke="#1e293b" stroke-linecap="round" stroke-linejoin="round">
+      <!-- a hand-written "r" with a smile under it -->
+      <path d="M206 196V312M206 250Q210 198 278 200" stroke-width="40"/>
+      <path d="M178 352Q256 408 334 352" stroke-width="20"/>
+    </g>
+  </g>
+</svg>
