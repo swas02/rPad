@@ -27,6 +27,16 @@
   </script>
   <style>
     /* Windows layout (VS Code style): activity bar | sidebar | editor, status bar along the bottom */
+    /* Phone look: pill tabs, brighter chrome icons and counter (desktop overrides below) */
+    #tabs { gap: 6px; padding: 0 12px }
+    #tabs .tab { margin: 6px 0; padding: 0 8px 0 12px; border-radius: 9999px }
+    #tabs .tab.on { background: rgb(var(--a500) / .16) }
+    #tabs .tab.on::after { display: none }
+    #top { border-bottom: 1px solid rgb(var(--n200)) }
+    .dark #top { border-bottom-color: rgb(var(--n800)) }
+    #star, #wsb { color: rgb(var(--n600)) }
+    .dark #star, .dark #wsb { color: rgb(var(--n300)) }
+    .dark #ct { color: rgb(var(--n300)) }
     @media (min-width: 900px) {
       #app { display: grid; grid-template-columns: 48px var(--sbw, 260px) minmax(0, 1fr); grid-template-rows: 30px auto auto auto auto minmax(0, 1fr) 24px; padding: 0 }
       #app.sbh { grid-template-columns: 48px 0 minmax(0, 1fr) }
@@ -85,7 +95,7 @@
       #ed { margin: 0; background: rgb(var(--n50)); border: 1px solid rgb(var(--n300)); border-top: 0; border-radius: 0 0 12px 12px; overflow: hidden }
       .dark #ed { background: rgb(var(--n900)); border-color: rgb(var(--n800)) }
       #tabs { gap: 4px; padding: 6px 8px }
-      #tabs .tab { border: 0; border-radius: 8px; padding: 0 8px 0 12px }
+      #tabs .tab { border: 0; border-radius: 8px; margin: 0; padding: 0 8px 0 12px }
       #tabs .tab:hover { background: rgb(var(--n500) / .12) }
       #tabs .tab.on, .dark #tabs .tab.on { background: rgb(var(--a500) / .16) }
       #tabs .tab.on::after { display: none }
@@ -131,7 +141,7 @@
 #ed .cm-placeholder:has(.wph){position:relative;display:inline-block}
 .wph{position:absolute;white-space:normal;left:16px;top:-.12em;width:max-content;max-width:min(40em,calc(100vw - 120px));font-family:ui-sans-serif,system-ui,sans-serif;line-height:1.5;user-select:none}
 .wph-t{line-height:1.2;font-size:1.9em;font-weight:600;letter-spacing:-.01em;color:rgb(var(--n700))}.dark .wph-t{color:rgb(var(--n200))}
-.wph-s{font-size:.95em;margin-top:6px;text-wrap:balance}.wph-s+.wph-s{margin-top:12px}
+.wph-s{font-size:.95em;margin-top:6px;text-wrap:pretty}.wph-s+.wph-s{margin-top:12px}
 .wph-g{display:grid;grid-template-columns:max-content auto;gap:8px 16px;align-items:center;margin-top:22px;font-size:.9em}
 .wph-g kbd{font:inherit;font-size:.85em;padding:2px 8px;border-radius:6px;border:1px solid rgb(var(--n300));background:rgb(var(--n100));color:rgb(var(--n600))}
 .dark .wph-g kbd{border-color:rgb(var(--n700));background:rgb(var(--n800));color:rgb(var(--n300))}
@@ -168,10 +178,10 @@
       <div id="sbc" class="flex min-h-0 flex-1 flex-col"></div>
       <div id="rz" class="absolute inset-y-0 -right-1 z-10 w-2 cursor-col-resize hover:bg-violet-500/40"></div>
     </aside>
-    <div id="top" class="flex h-12 shrink-0 items-center pl-5 pr-1.5 [#app.kb_&]:hidden">
-      <img src="assets/icon.svg" alt="" class="mr-1 size-7 shrink-0">
+    <div id="top" class="flex h-12 shrink-0 items-center pl-3 pr-0 [#app.kb_&]:hidden">
+      <img id="lg" src="assets/icon.svg" alt="" class="mr-1 hidden size-7 shrink-0">
       <button id="wsb" data-a="ws" aria-label="Choose folder"
-        class="flex h-9 items-center gap-1.5 rounded-full pl-2.5 pr-2 text-sm font-medium text-slate-500 active:bg-slate-200 dark:text-slate-400 dark:active:bg-slate-700"></button>
+        class="flex h-9 items-center gap-1.5 rounded-full pl-3 pr-2 text-sm font-medium text-slate-500 active:bg-slate-200 dark:text-slate-400 dark:active:bg-slate-700"></button>
       <div class="flex-1"></div>
       <button id="star" data-a="star" aria-label="Star"
         class="grid size-11 shrink-0 place-items-center rounded-xl active:bg-slate-200/70 dark:active:bg-slate-700"></button>
@@ -236,7 +246,7 @@
       <button data-a="grid" aria-label="All tabs"
         class="grid h-[46px] w-[58px] place-items-center rounded-xl text-slate-500 active:bg-slate-100 dark:text-slate-400 dark:active:bg-slate-700"><span
           id="gc"
-          class="grid size-[22px] place-items-center rounded-md border-2 border-current text-[11px] font-bold leading-none"></span></button>
+          class="grid size-[21px] place-items-center rounded-[7px] border-[1.8px] border-current text-[11px] font-semibold leading-none"></span></button>
       <button data-a="hist" aria-label="History"
         class="grid h-[46px] w-[58px] place-items-center rounded-xl text-slate-500 active:bg-slate-100 dark:text-slate-400 dark:active:bg-slate-700"></button>
       <button data-a="menu" aria-label="Menu"
@@ -322,7 +332,7 @@
       if (skip != null) { const h = skip; skip = null; if (location.hash !== h) { history.replaceState(null, "", h); render() } }
       else if (shH) { shH = 0; $("#sh").classList.replace("flex", "hidden") }
     });
-    const swv = on => { app.classList.toggle("insw", on); $("#sw").classList.toggle("hidden", !on); $("#sw").classList.toggle("flex", on) };
+    const swv = on => { app.classList.toggle("insw", on); $("#sw").classList.toggle("hidden", !on); $("#sw").classList.toggle("flex", on); if (DK.matches) mbR() };
     function render() {
       const [r, p] = location.hash.replace(/^#\/?/, "").split("-"); close();
       if (RT[r]) { OG = r === "folders" && F[+p] ? +p : -1; OM = OG >= 0 ? "t" : RT[r]; OQ = ""; ovS() }
@@ -342,7 +352,7 @@
     }
     // a file name every system accepts: no \ / : * ? " < > | or control characters, no trailing dot or space, no reserved Windows name
     const fileOf = t => { let s = T(t).replace(/[\\/:*?"<>|\x00-\x1f]+/g, " ").replace(/\s+/g, " ").replace(/^[.\s]+|[.\s]+$/g, "").slice(0, 60).trim(); if (!s || /^(con|prn|aux|nul|com\d|lpt\d)$/i.test(s)) s = "note"; return s + dx(t) };
-    function applyTop() { $("#top").classList.toggle("hidden", !!S.top); const g = $("#tg"); g.innerHTML = ic(S.top ? "dn" : "up"); g.setAttribute("aria-label", S.top ? "Show top row" : "Hide top row") }
+    function applyTop() { $("#top").classList.toggle("hidden", !!S.top); $("#lg").classList.toggle("hidden", !S.logo); const g = $("#tg"); g.innerHTML = ic(S.top ? "dn" : "up"); g.setAttribute("aria-label", S.top ? "Show top row" : "Hide top row") }
     const DQ = matchMedia("(prefers-color-scheme:dark)");
     function theme() {
       applyPalette(S.pal);
@@ -439,10 +449,11 @@
     function ovS() {
       swv(true); const md = OG >= 0 ? "g" : OM;
       const seg = (m, i, l) => `<button class="grid h-9 w-14 place-items-center rounded-full ${md === m ? "bg-white text-slate-900 shadow dark:bg-slate-600 dark:text-white" : "text-slate-500 dark:text-slate-400"}" data-a="om" data-v="${m}" aria-label="${l}" aria-pressed="${md === m}">${ic(i)}</button>`;
+      const oqI = c => `<input id="oq" class="${c} rounded-xl bg-slate-100 px-3.5 py-2.5 outline-none placeholder:text-slate-500 dark:placeholder:text-slate-400 dark:bg-slate-800" placeholder="${{ t: "Search your tabs", g: "Search folders", s: "Search starred" }[OM]}" value="${esc(OQ)}">`;
       $("#sw").innerHTML = (OG >= 0
         ? `<div class="flex items-center gap-1 px-2 pt-2"><button class="${IB}" data-a="om" data-v="g" aria-label="Back to folders">${ic("back")}</button><span class="text-slate-500 dark:text-slate-400">Folders /</span><span class="pointer-events-none ml-1 rounded-full px-3 py-1 text-sm font-medium ${pill(F[OG])}">${esc(F[OG].n)}</span></div>`
-        : `<div class="flex items-center px-2 pt-2"><button class="${IB}" data-a="swx" aria-label="Back to note">${ic("back")}</button></div>`) + `
-<div class="px-3.5 pb-1 pt-2"><input id="oq" class="w-full rounded-xl bg-slate-100 px-3.5 py-2.5 outline-none placeholder:text-slate-500 dark:placeholder:text-slate-400 dark:bg-slate-800" placeholder="${{ t: "Search your tabs", g: "Search folders", s: "Search starred" }[OM]}" value="${esc(OQ)}"></div><div id="ol" class="min-h-0 flex-1 overflow-y-auto pb-24"></div>${OG >= 0 ? `<button data-a="new" class="absolute bottom-5 right-5 mb-[env(safe-area-inset-bottom)] flex items-center gap-2 rounded-2xl bg-violet-600 py-3.5 pl-4 pr-5 font-medium text-white shadow-lg active:bg-violet-700">${ic("plus")}New tab</button>` : `<div class="flex shrink-0 items-center justify-between border-t border-slate-200 bg-white px-2 py-2 dark:border-slate-700 dark:bg-slate-800"><span class="w-11"></span><div class="flex rounded-full bg-slate-100 p-1 dark:bg-slate-700">${seg("t", "tabs", "Open tabs")}${seg("g", "fold", "Folders")}${seg("s", "star", "Starred")}</div><button class="${IB}" data-a="new" aria-label="New tab">${ic("plus")}</button></div>`}`;
+        : `<div class="flex items-center gap-1 px-2 pb-1 pt-2"><button class="${IB}" data-a="swx" aria-label="Back to note">${ic("back")}</button>${oqI("min-w-0 flex-1")}</div>`) + `
+${OG >= 0 ? `<div class="px-3.5 pb-1 pt-2">${oqI("w-full")}</div>` : ""}<div id="ol" class="min-h-0 flex-1 overflow-y-auto pb-24"></div>${OG >= 0 ? `<button data-a="new" class="absolute bottom-5 right-5 mb-[env(safe-area-inset-bottom)] flex items-center gap-2 rounded-2xl bg-violet-600 py-3.5 pl-4 pr-5 font-medium text-white shadow-lg active:bg-violet-700">${ic("plus")}New tab</button>` : `<div class="flex shrink-0 items-center justify-between border-t border-slate-200 bg-white px-2 py-2 min-[900px]:!hidden dark:border-slate-700 dark:bg-slate-800"><span class="w-11"></span><div class="flex rounded-full bg-slate-100 p-1 min-[900px]:!hidden dark:bg-slate-700">${seg("t", "tabs", "Open tabs")}${seg("g", "fold", "Folders")}${seg("s", "star", "Starred")}</div><button class="${IB}" data-a="new" aria-label="New tab">${ic("plus")}</button></div>`}`;
       $("#oq").oninput = e => { OQ = e.target.value; ovL() }; ovL()
     }
     function ovL() {
@@ -503,6 +514,7 @@ ${DV}${HD("Text")}
 ${LB("Font")}<div class="relative px-3 pb-1">${fontSel()}<svg class="pointer-events-none absolute right-6 top-3 size-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
 ${DV}${HD("Editor")}
 ${[["wrap", "Word wrap", S.wrap !== false], ["ln", "Line numbers", !!S.ln], ["spell", "Spell check", S.spell !== false]].map(tg).join("")}
+<div class="min-[900px]:hidden">${DV}${HD("Header")}${tg(["logo", `App icon<small class="${SM}">Show the logo at the left of the top row (phone only)</small>`, !!S.logo])}</div>
 ${DV}${HD("Files")}
 ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new files are called Untitled</small>`, S.ts !== false])}${tg(["ce", `Remove empty files<small class="${SM}">Unnamed files with no text are removed when closed and at start</small>`, S.ce !== false])}<div class="h-2"></div>`
     }
@@ -615,7 +627,7 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
         ovx: () => closeT(i),
         mv: () => { if (!F[i].ok) return; t.f = i; close(); show(); toast(`Saved in ${F[i].n}`) }, nt: () => add(i),
         top: () => { S.top = !S.top; applyTop(); keep() },
-        fs: () => { PF = Math.max(6, Math.min(24, (PF ?? S.fs) + +b.dataset.d)); const on = PF !== S.fs; document.querySelectorAll(".pfv").forEach(e => e.textContent = PF); document.querySelectorAll("[data-a=fsa]").forEach(e => { e.disabled = !on; e.classList.toggle("opacity-40", !on); e.classList.toggle("!bg-violet-600", on); e.classList.toggle("!text-white", on) }) }, fsa: () => { S.fs = PF; PF = null; rf() }, tg: () => { if (v === "wrap") S.wrap = S.wrap === false; else if (v === "ts") S.ts = S.ts === false; else if (v === "spell") S.spell = S.spell === false; else if (v === "ce") S.ce = S.ce === false; else S.ln = !S.ln; show(); if (shOpen()) setS() }, pal: () => { S.pal = v; theme(); show(); if (shOpen()) setS() }, th: () => { S.theme = v; theme(); show(); if (shOpen()) setS() }, ff: () => { S.font = v; show(); if (shOpen()) setS() },
+        fs: () => { PF = Math.max(6, Math.min(24, (PF ?? S.fs) + +b.dataset.d)); const on = PF !== S.fs; document.querySelectorAll(".pfv").forEach(e => e.textContent = PF); document.querySelectorAll("[data-a=fsa]").forEach(e => { e.disabled = !on; e.classList.toggle("opacity-40", !on); e.classList.toggle("!bg-violet-600", on); e.classList.toggle("!text-white", on) }) }, fsa: () => { S.fs = PF; PF = null; rf() }, tg: () => { if (v === "wrap") S.wrap = S.wrap === false; else if (v === "ts") S.ts = S.ts === false; else if (v === "spell") S.spell = S.spell === false; else if (v === "ce") S.ce = S.ce === false; else if (v === "logo") { S.logo = !S.logo; applyTop() } else S.ln = !S.ln; show(); if (shOpen()) setS() }, pal: () => { S.pal = v; theme(); show(); if (shOpen()) setS() }, th: () => { S.theme = v; theme(); show(); if (shOpen()) setS() }, ff: () => { S.font = v; show(); if (shOpen()) setS() },
         thc: () => { S.theme = { auto: "light", light: "dark", dark: "auto" }[S.theme] || "auto"; theme(); show() },
         ap: () => { if (!S.sbh && (S.sp || "e") === v) S.sbh = 1; else { S.sbh = 0; S.sp = v } app.classList.toggle("sbh", !!S.sbh); show(); if (!S.sbh && v === "s") $("#sq").focus() },
         sf: () => { SF = i; SFO = 0; SSM = 0; show() }, sfm: () => { SFO = !SFO; SSM = 0; show() }, ssm: () => { SSM = !SSM; SFO = 0; show() }, ss: () => { S.so = v; SSM = 0; keep(); show() }, fx: () => { const c = S.fc || (S.fc = []), k = c.indexOf(i); k < 0 ? c.push(i) : c.splice(k, 1); show() },
@@ -815,6 +827,7 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
       $("#mb").innerHTML = `<button data-a="mb" data-v="sb" aria-label="Toggle sidebar" title="Toggle sidebar (Ctrl+B)" aria-pressed="${!S.sbh}" class="grid h-full w-9 place-items-center text-slate-500 hover:bg-slate-200 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white">${ic("side", "size-4 stroke-2")}</button><span class="w-1"></span>` +
         Object.keys(MN).map(k => `<button data-a="mo" data-v="${k}" aria-haspopup="menu" aria-expanded="${MO === k}" class="${MBT}">${k}</button>`).join("") +
         `<div class="flex-1"></div>` +
+        [["t", "tabs", "All tabs"], ["g", "fold", "Folders"], ["s", "star", "Starred"]].map(([k, n, l]) => `<button data-a="om" data-v="${k}" aria-label="${l}" title="${l}" aria-pressed="${app.classList.contains("insw") && (OG >= 0 ? "g" : OM) === k}" class="grid h-full w-9 place-items-center text-slate-500 hover:bg-slate-200 hover:text-slate-900 aria-pressed:bg-slate-500/20 aria-pressed:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white dark:aria-pressed:text-white">${ic(n, "size-4 stroke-2")}</button>`).join("") + `<span class="mx-1 h-4 w-px bg-slate-300 dark:bg-slate-700"></span>` +
         `<button data-a="ap" data-v="g" aria-label="Settings" title="Settings" class="grid h-full w-9 place-items-center text-slate-500 hover:bg-slate-200 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white">${ic("gear", "size-4 stroke-2")}</button>` +
         (MO ? `<div id="mbm" role="menu" class="absolute top-full z-30 mt-0.5 min-w-[240px] ${MNU}">${MN[MO]().map(it).join("")}</div>` : "");
       if (MO) $("#mbm").style.left = $(`#mb [data-v=${MO}]`).offsetLeft + "px"
