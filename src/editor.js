@@ -171,6 +171,9 @@ export function create({ parent, onText, onSelect, onFind }) {
       view.dispatch({ effects: [...k].map(n => C[n].reconfigure(parts()[n])) })
     },
 
+    // re-read font metrics after the page changes the font size or family
+    // (flipping line wrapping off and on makes CodeMirror re-measure every line height, which a plain requestMeasure does not)
+    remeasure() { view.dispatch({ effects: C.wrap.reconfigure(cfg.wrap ? [] : EditorView.lineWrapping) }); requestAnimationFrame(() => view.dispatch({ effects: C.wrap.reconfigure(parts().wrap) })) },
     undo: () => undo(view), redo: () => redo(view),
     selectAll() { view.focus(); selectAll(view) },
     select: show,

@@ -68,6 +68,41 @@
       .dark #tabs .tab.on { background: rgb(var(--n900)) }
       #tabs .tab.on::after { top: 0; bottom: auto }
       #ed .cm-scroller { scrollbar-gutter: stable }
+      /* Look: separate rounded cards on a backdrop, pill tabs, borderless chrome (same layout as before) */
+      #app { padding: 0 8px 8px; column-gap: 0; grid-template-columns: 0 var(--sbw, 260px) minmax(0, 1fr); background: rgb(var(--n200)) }
+      #app.sbh { grid-template-columns: 0 0 minmax(0, 1fr) }
+      .dark #app { background: rgb(var(--n950)) }
+      #mb, #st, #ab { background: transparent; border: 0 }
+      #st { padding: 0 4px }
+      #st > * { border-radius: 6px; padding: 2px 8px }
+      #st > button:hover, #st > [data-a]:hover { background: rgb(var(--n500) / .15) }
+      #sb { margin-right: 8px; padding-top: 44px; background: rgb(var(--n50)); border: 1px solid rgb(var(--n300)); border-radius: 12px; overflow: hidden; box-shadow: 0 1px 2px rgb(0 0 0 / .04) }
+      .dark #sb { background: rgb(var(--n900)); border-color: rgb(var(--n800)) }
+      #rz { right: 0 }
+      #tr { height: 42px; background: rgb(var(--n50)); border: 1px solid rgb(var(--n300)); border-bottom: 0; border-radius: 12px 12px 0 0 }
+      .dark #tr { background: rgb(var(--n900)); border-color: rgb(var(--n800)) }
+      #ed { margin: 0; background: rgb(var(--n50)); border: 1px solid rgb(var(--n300)); border-top: 0; border-radius: 0 0 12px 12px; overflow: hidden }
+      .dark #ed { background: rgb(var(--n900)); border-color: rgb(var(--n800)) }
+      #tabs { gap: 4px; padding: 6px 8px }
+      #tabs .tab { border: 0; border-radius: 8px; padding: 0 8px 0 12px }
+      #tabs .tab:hover { background: rgb(var(--n500) / .12) }
+      #tabs .tab.on, .dark #tabs .tab.on { background: rgb(var(--a500) / .16) }
+      #tabs .tab.on::after { display: none }
+      #sb .nc-on .ni { color: rgb(var(--a600)) }
+      .dark #sb .nc-on .ni { color: rgb(var(--a400)) }
+      #ab { margin-right: 8px; grid-column: 2; grid-row: 2; align-self: start; z-index: 6; flex-direction: row; align-items: center; height: 44px; padding: 0 8px; gap: 2px }
+      #app.sbh #ab { display: none !important }
+      #ab button { width: 34px; height: 34px; border-radius: 10px }
+      #ab button.tb { width: auto; padding: 0 12px 0 10px; gap: 6px; display: flex; font-size: 13px; font-weight: 500 }
+      #ab button.tb svg { width: 18px; height: 18px }
+      #ab button:not(.tb) { width: 30px; height: 30px }
+      #ab button:not(.tb) svg { width: 16px; height: 16px }
+      #ab button::before { display: none !important }
+      #ab button[aria-pressed=true] { background: rgb(var(--a500) / .16) }
+      #ab button:hover { background: rgb(var(--n500) / .12) }
+      /* sidebar content (note list, Settings) uses one text size */
+      #nl, #sb .stg { font-size: 14px; line-height: 20px }
+      #sb .stg .text-[13px], #sb .stg .text-sm { font-size: 14px }
     }
   /* VS Code-style scrollbars (mouse devices only; phones keep the native overlay bar) */
   @media (hover:hover) and (pointer:fine){
@@ -92,8 +127,15 @@
 .dark #ed .cm-content{caret-color:rgb(var(--a400))}
 #ed .cm-line{padding:0}
 #ed .cm-placeholder{color:rgb(var(--n500))}
+.wph{font-family:ui-sans-serif,system-ui,sans-serif;padding:6px 0 0;line-height:1.5;user-select:none}
+.wph-t{font-size:1.9em;font-weight:600;letter-spacing:-.01em;color:rgb(var(--n700))}.dark .wph-t{color:rgb(var(--n200))}
+.wph-s{font-size:.95em;margin-top:2px}
+.wph-g{display:grid;grid-template-columns:max-content auto;gap:8px 16px;align-items:center;margin-top:22px;font-size:.9em}
+.wph-g kbd{font:inherit;font-size:.85em;padding:2px 8px;border-radius:6px;border:1px solid rgb(var(--n300));background:rgb(var(--n100));color:rgb(var(--n600))}
+.dark .wph-g kbd{border-color:rgb(var(--n700));background:rgb(var(--n800));color:rgb(var(--n300))}
+#ed .cm-line:has(.cm-placeholder){background:transparent!important}
 .dark #ed .cm-placeholder{color:rgb(var(--n400))}
-#ed .cm-gutters{background:rgb(var(--n50));z-index:2;border:0;border-right:1px solid rgb(var(--n300));color:rgb(var(--n400));font-size:.82em;padding-left:10px}
+#ed .cm-gutters{background:rgb(var(--n50));z-index:2;border:0;border-right:1px solid rgb(var(--n300));color:rgb(var(--n400));padding-left:10px}
 .dark #ed .cm-gutters{background:rgb(var(--n900));border-color:rgb(var(--n600));color:rgb(var(--n500))}
 #ed .cm-lineNumbers .cm-gutterElement{padding:0 12px 0 4px}
 #ed.ro .cm-content{opacity:.5}
@@ -129,7 +171,7 @@
       <button id="wsb" data-a="ws" aria-label="Choose folder"
         class="flex h-9 items-center gap-1.5 rounded-full pl-2.5 pr-2 text-sm font-medium text-slate-500 active:bg-slate-200 dark:text-slate-400 dark:active:bg-slate-700"></button>
       <div class="flex-1"></div>
-      <button id="star" data-a="star" aria-label="Bookmark"
+      <button id="star" data-a="star" aria-label="Star"
         class="grid size-11 shrink-0 place-items-center rounded-xl active:bg-slate-200/70 dark:active:bg-slate-700"></button>
     </div>
     <div id="tr" class="flex h-11 shrink-0 border-b border-slate-200 dark:border-slate-700">
@@ -238,7 +280,7 @@
       TON = "on font-medium text-slate-900 after:absolute after:inset-x-0 after:bottom-0 after:h-[2.5px] after:rounded-t-sm after:bg-violet-600 dark:text-slate-100 dark:after:bg-violet-400",
       TOFF = "text-slate-500 dark:text-slate-400";
     const P = {
-      home: '<path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/>', swap: '<path d="M7 7h11l-3-3M17 17H6l3 3"/>', history: '<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/>', fold: '<path d="M3 7h6l2 2h10v10H3z"/>', find: '<circle cx="11" cy="11" r="6"/><path d="M16 16l4 4"/>', more: '<circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/>', plus: '<path d="M12 5v14M5 12h14"/>', undo: '<path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/>', redo: '<path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 000 12h3"/>', kbd: '<rect x="3" y="3" width="18" height="12" rx="2"/><path d="M7 7h.01M11 7h.01M15 7h.01M8 11h8M9 19l3 2 3-2"/>', chev: '<path d="M7 10l5 5 5-5"/>', back: '<path d="M15 6l-6 6 6 6"/>', copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2"/>', tabs: '<rect x="4" y="5" width="16" height="14" rx="3"/><path d="M4 9.5h16"/>', star: '<path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.9l-5.2 2.8 1-5.9L3.5 9.7l5.9-.8z"/>', edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/>', x: '<path d="M6 6l12 12M18 6L6 18"/>', up: '<path d="M6 14l6-6 6 6"/>', dn: '<path d="M6 10l6 6 6-6"/>', chk: '<path d="M5 12l5 5 9-10"/>', list: '<path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>', dl: '<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>', spark: '<path d="M11 3l1.9 5.1L18 10l-5.1 1.9L11 17l-1.9-5.1L4 10l5.1-1.9z"/><path d="M19 16v5M16.5 18.5h5"/>', gear: '<circle cx="12" cy="12" r="3"/><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>'
+      doc: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>', srt: '<path d="M8 5v14M8 5L4.5 8.5M8 5l3.5 3.5M16 19V5m0 14l-3.5-3.5M16 19l3.5-3.5"/>', home: '<path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/>', swap: '<path d="M7 7h11l-3-3M17 17H6l3 3"/>', history: '<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/>', fold: '<path d="M3 7h6l2 2h10v10H3z"/>', find: '<circle cx="11" cy="11" r="6"/><path d="M16 16l4 4"/>', more: '<circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/>', plus: '<path d="M12 5v14M5 12h14"/>', undo: '<path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/>', redo: '<path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 000 12h3"/>', kbd: '<rect x="3" y="3" width="18" height="12" rx="2"/><path d="M7 7h.01M11 7h.01M15 7h.01M8 11h8M9 19l3 2 3-2"/>', chev: '<path d="M7 10l5 5 5-5"/>', back: '<path d="M15 6l-6 6 6 6"/>', copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2"/>', tabs: '<rect x="4" y="5" width="16" height="14" rx="3"/><path d="M4 9.5h16"/>', star: '<path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.9l-5.2 2.8 1-5.9L3.5 9.7l5.9-.8z"/>', edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/>', x: '<path d="M6 6l12 12M18 6L6 18"/>', up: '<path d="M6 14l6-6 6 6"/>', dn: '<path d="M6 10l6 6 6-6"/>', chk: '<path d="M5 12l5 5 9-10"/>', list: '<path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>', dl: '<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>', spark: '<path d="M11 3l1.9 5.1L18 10l-5.1 1.9L11 17l-1.9-5.1L4 10l5.1-1.9z"/><path d="M19 16v5M16.5 18.5h5"/>', gear: '<circle cx="12" cy="12" r="3"/><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>'
     };
     const ic = (n, c = "size-[22px] stroke-[1.8]") => `<svg viewBox="0 0 24 24" class="${c} shrink-0 fill-none stroke-current [stroke-linecap:round] [stroke-linejoin:round]">${P[n]}</svg>`,
       esc = t => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
@@ -330,8 +372,8 @@
       const wi = S.tabs.findIndex(x => x.w); if (wi >= 0 && S.tabs.length > 1) { S.tabs.splice(wi, 1); if (S.cur >= wi && S.cur > 0) S.cur-- }
       ed.flush(); const t = cur(), b = F[t.f].ok ? t.b : "off"; if (reset) { ed.open(tid(t), t.t); ed.keepOnly(new Set(S.tabs.map(tid))) }
       const ro = b === "changed" || b === "min", wl = !!t.w && !t.t;
-      ed.set({ readOnly: ro, wrap: S.wrap !== false, ln: !!S.ln && !wl, spellcheck: S.spell !== false, autocorrect: S.spell === false ? "off" : "on", placeholder: wl ? "" : "Start typing. It saves itself." });
-      $("#ed").classList.toggle("ro", ro); $("#ed").classList.toggle("sans", S.font === "sans"); { const cf = S.font && S.font !== "mono" && S.font !== "sans"; $("#ed").classList.toggle("cf", !!cf); if (cf) $("#ed").style.setProperty("--ff", '"' + S.font.replace(/"/g, "") + '", ui-monospace, monospace') } document.documentElement.style.setProperty("--fs", S.fs + "px");
+      ed.set({ readOnly: ro, wrap: S.wrap !== false, ln: !!S.ln && !wl, spellcheck: S.spell !== false, autocorrect: S.spell === false ? "off" : "on", placeholder: wl ? WPH : "Start typing" });
+      $("#ed").classList.toggle("ro", ro); $("#ed").classList.toggle("sans", S.font === "sans"); { const cf = S.font && S.font !== "mono" && S.font !== "sans"; $("#ed").classList.toggle("cf", !!cf); if (cf) $("#ed").style.setProperty("--ff", '"' + S.font.replace(/"/g, "") + '", ui-monospace, monospace') } document.documentElement.style.setProperty("--fs", S.fs + "px"); ed.remeasure && ed.remeasure();
       $("#wsb").innerHTML = ic("fold", "size-[18px] stroke-[1.8] " + tx(F[t.f])) + `<span>${esc(F[t.f].n)}</span>` + ic("chev", "size-[18px] stroke-[1.8]");
       $("#tabs").innerHTML = S.tabs.map((x, i) => `<button role="tab" aria-selected="${i === S.cur}" class="${TAB}${i === S.cur ? TON : TOFF}" data-a="tab" data-i="${i}"><span class="size-2 shrink-0 rounded-full ${dot(F[x.f])}"></span><span class="min-w-0 truncate py-1 leading-normal">${esc(D(x))}</span><span data-a="tcl" data-i="${i}" role="button" aria-label="Close tab" class="${i === S.cur ? "" : "invisible group-hover/t:visible "}-mr-1 grid size-5 shrink-0 place-items-center rounded text-slate-500 hover:bg-slate-200 active:bg-slate-300 dark:text-slate-400 dark:hover:bg-slate-700">${ic("x", "size-3.5 stroke-2")}</span></button>`).join("") +`<button data-a="new" aria-label="New tab" class="grid w-9 shrink-0 place-items-center rounded-lg text-slate-500 active:bg-slate-200/70 dark:text-slate-400 dark:active:bg-slate-700">${ic("plus", "size-5 stroke-[1.8]")}</button>`;
       const a = $("#tabs .on"); if (a) $("#tabs").scrollLeft = a.offsetLeft - 70;
@@ -349,12 +391,19 @@
     }
     // Welcome: shown over an empty Welcome tab; typing into it turns it into a normal tab
     const WT = () => ({ t: "", f: 0, w: 1 });
+    // the empty Welcome tab: a short guide shown as the editor's placeholder
+    const WPH = (() => {
+      const d = document.createElement("div"), el = (t, c, x) => { const e = document.createElement(t); e.className = c; e.textContent = x; return e };
+      d.className = "wph"; d.append(el("div", "wph-t", "Start typing"), el("div", "wph-s", "Everything saves itself. No file to create, no button to press."));
+      if (matchMedia("(min-width:900px)").matches) {
+        const g = el("div", "wph-g", "");
+        [["Ctrl+Alt+N", "New tab"], ["Ctrl+P", "Jump to any tab"], ["Ctrl+Shift+F", "Search every tab"], ["Ctrl+O", "Open a file"], ["Ctrl+Shift+P", "All commands"]].forEach(([k, l]) => g.append(el("kbd", "", k), el("span", "", l)));
+        d.append(g)
+      } else d.append(el("div", "wph-s", "Tap + for a new tab. Paste, type or open a file."));
+      return d
+    })();
     function wlR(t) {
-      const el = $("#wl"), on = !!t.w && !t.t; el.classList.toggle("hidden", !on); el.classList.toggle("flex", on); if (!on) return;
-      const L = "pointer-events-auto flex items-center gap-2 py-1 text-left text-violet-600 hover:underline dark:text-violet-400", rc = S.closed.map((x, i) => [x, i]).filter(r => r[0].t.trim()).slice(0, 5);
-      el.innerHTML = `<h2 class="text-2xl font-semibold">Just Perfect Rough Notepad</h2><p class="mb-6 text-slate-500 dark:text-slate-400">Start typing, or pick one below.</p>
-<h3 class="mb-1 font-semibold">Start</h3>${[["new", "", "plus", "New file"], ["mb", "open", "fold", "Open file…"], ["pnew", "", "copy", "Paste as new tab"], ["mb", "rs", "history", "Restore from backup…"]].map(([a, v, n, l]) => `<button data-a="${a}" data-v="${v}" class="${L}">${ic(n, "size-4 stroke-2")}${l}</button>`).join("")}
-<h3 class="mb-1 mt-6 font-semibold">Recent</h3>${rc.length ? rc.map(([x, i]) => `<button data-a="hopen" data-i="${i}" class="${L}"><span class="truncate">${esc(D(x))}</span><span class="shrink-0 text-slate-500 dark:text-slate-400">${esc(F[x.f].n)}</span></button>`).join("") : `<p class="text-slate-500 dark:text-slate-400">No recent files.</p>`}`
+      $("#wl").classList.add("hidden"); // the empty editor shows its Start typing placeholder instead
     }
     $("#fb [data-f=s]").insertAdjacentHTML("beforebegin", [["ul", "Underline", "<span class=\"underline\">U</span>"], ["bo", "Bold", "<b>B</b>"], ["it", "Italic", "<i>I</i>"], ["mo", "Monospace", "𝙼"], ["sp", "Superscript", "x²"], ["sb", "Subscript", "x₂"]].map(x => `<button data-f="${x[0]}" aria-label="${x[1]}" class="h-11 min-w-[44px] shrink-0 rounded-lg px-3 font-mono text-[15px] font-medium text-slate-600 active:bg-slate-100 dark:text-slate-300 dark:active:bg-slate-700">${x[2]}</button>`).join(""));
     $("#fb [data-f=out]").insertAdjacentHTML("beforebegin", [["d", "Dash list", "-"], ["q", "Quote", ">"], ["h", "Heading, tap again for smaller levels", "H"], ["e", "Banner heading", "==="], ["u", "Upper case or Title Case", "AA"], ["v", "Divider, tap again to change style", "─"]].map(x => `<button data-f="${x[0]}" aria-label="${x[1]}" class="h-11 min-w-[44px] shrink-0 rounded-lg px-3 font-mono text-[15px] font-medium text-slate-600 active:bg-slate-100 dark:text-slate-300 dark:active:bg-slate-700">${x[2]}</button>`).join(""));
@@ -398,7 +447,7 @@
       $("#sw").innerHTML = (OG >= 0
         ? `<div class="flex items-center gap-1 px-2 pt-2"><button class="${IB}" data-a="om" data-v="g" aria-label="Back to folders">${ic("back")}</button><span class="text-slate-500 dark:text-slate-400">Folders /</span><span class="pointer-events-none ml-1 rounded-full px-3 py-1 text-sm font-medium ${pill(F[OG])}">${esc(F[OG].n)}</span></div>`
         : `<div class="flex items-center px-2 pt-2"><button class="${IB}" data-a="swx" aria-label="Back to note">${ic("back")}</button></div>`) + `
-<div class="px-3.5 pb-1 pt-2"><input id="oq" class="w-full rounded-xl bg-slate-100 px-3.5 py-2.5 outline-none placeholder:text-slate-500 dark:placeholder:text-slate-400 dark:bg-slate-800" placeholder="${{ t: "Search your tabs", g: "Search folders", s: "Search bookmarks" }[OM]}" value="${esc(OQ)}"></div><div id="ol" class="min-h-0 flex-1 overflow-y-auto pb-24"></div>${OG >= 0 ? `<button data-a="new" class="absolute bottom-5 right-5 mb-[env(safe-area-inset-bottom)] flex items-center gap-2 rounded-2xl bg-violet-600 py-3.5 pl-4 pr-5 font-medium text-white shadow-lg active:bg-violet-700">${ic("plus")}New tab</button>` : `<div class="flex shrink-0 items-center justify-between border-t border-slate-200 bg-white px-2 py-2 dark:border-slate-700 dark:bg-slate-800"><span class="w-11"></span><div class="flex rounded-full bg-slate-100 p-1 dark:bg-slate-700">${seg("t", "tabs", "Open tabs")}${seg("g", "fold", "Folders")}${seg("s", "star", "Bookmarks")}</div><button class="${IB}" data-a="new" aria-label="New tab">${ic("plus")}</button></div>`}`;
+<div class="px-3.5 pb-1 pt-2"><input id="oq" class="w-full rounded-xl bg-slate-100 px-3.5 py-2.5 outline-none placeholder:text-slate-500 dark:placeholder:text-slate-400 dark:bg-slate-800" placeholder="${{ t: "Search your tabs", g: "Search folders", s: "Search starred" }[OM]}" value="${esc(OQ)}"></div><div id="ol" class="min-h-0 flex-1 overflow-y-auto pb-24"></div>${OG >= 0 ? `<button data-a="new" class="absolute bottom-5 right-5 mb-[env(safe-area-inset-bottom)] flex items-center gap-2 rounded-2xl bg-violet-600 py-3.5 pl-4 pr-5 font-medium text-white shadow-lg active:bg-violet-700">${ic("plus")}New tab</button>` : `<div class="flex shrink-0 items-center justify-between border-t border-slate-200 bg-white px-2 py-2 dark:border-slate-700 dark:bg-slate-800"><span class="w-11"></span><div class="flex rounded-full bg-slate-100 p-1 dark:bg-slate-700">${seg("t", "tabs", "Open tabs")}${seg("g", "fold", "Folders")}${seg("s", "star", "Starred")}</div><button class="${IB}" data-a="new" aria-label="New tab">${ic("plus")}</button></div>`}`;
       $("#oq").oninput = e => { OQ = e.target.value; ovL() }; ovL()
     }
     function ovL() {
@@ -407,7 +456,7 @@
         const card = (x, i) => `<div class="cd relative flex aspect-[4/3] select-none flex-col justify-between rounded-2xl border bg-white p-3.5 text-left has-[.o:active]:bg-slate-50 dark:bg-slate-800 dark:has-[.o:active]:bg-slate-700 ${i === S.cur ? "border-violet-500 ring-1 ring-violet-500 dark:border-violet-400 dark:ring-violet-400" : "border-slate-200 dark:border-slate-700"}" data-i="${i}"><button class="o absolute inset-0 rounded-2xl" data-a="ovo" data-i="${i}" aria-label="Open ${esc(D(x))}"${i === S.cur ? ' aria-current="true"' : ""}></button><b class="pointer-events-none line-clamp-3 pr-7 text-base font-medium leading-snug [overflow-wrap:anywhere]">${esc(D(x))}</b><small class="pointer-events-none flex items-center gap-2 text-[13px] text-slate-500 dark:text-slate-400"><span class="size-2.5 shrink-0 rounded-full ${dot(F[x.f])}"></span><span class="truncate">${esc(F[x.f].n)}${x.m ? " · " + ago(x.m) : ""}</span></small><button class="x absolute right-1.5 top-1.5 grid size-9 place-items-center rounded-lg text-slate-400 active:bg-slate-100 dark:active:bg-slate-700" data-a="ovx" data-i="${i}" aria-label="Close tab">${ic("x", "size-[16px] stroke-[1.8]")}</button></div>`;
         const rows = S.tabs.map((x, i) => [x, i]).filter(r => (OG < 0 || r[0].f === OG) && (OM !== "s" || r[0].s) && (!q || (T(r[0]) + r[0].t).toLowerCase().includes(q)));
         $("#ol").innerHTML = `<div class="${CAP} !px-3.5">${rows.length} ${rows.length === 1 ? "tab" : "tabs"}</div>` +
-          (rows.length ? `<div class="grid grid-cols-2 gap-3 px-3.5 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">${rows.map(r => card(r[0], r[1])).join("")}</div>` : `<div class="${CAP} !px-3.5">${OM === "s" && !q ? "No bookmarks yet. Tap the star to bookmark a tab." : "No tabs found."}</div>`)
+          (rows.length ? `<div class="grid grid-cols-2 gap-3 px-3.5 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">${rows.map(r => card(r[0], r[1])).join("")}</div>` : `<div class="${CAP} !px-3.5">${OM === "s" && !q ? "No starred tabs yet. Tap the star on a tab." : "No tabs found."}</div>`)
       } else {
         const rows = F.map((f, i) => [f, i]).filter(r => !q || r[0].n.toLowerCase().includes(q));
         $("#ol").innerHTML = `<div class="${CAP} !px-3.5">${rows.length} ${rows.length === 1 ? "folder" : "folders"}</div><div class="px-1.5">` + rows.map(([f, i]) => {
@@ -420,7 +469,7 @@
     function menuS() {
       const t = cur(); sheet(`<div class="flex gap-2 px-3 pb-1 pt-4"><label class="${INP} flex items-center focus-within:!border-violet-500 dark:focus-within:!border-violet-400"><input id="rn" class="min-w-0 flex-1 bg-transparent font-semibold outline-none placeholder:text-slate-700 dark:placeholder:text-slate-200" placeholder="${esc(D(t))}" aria-label="File name" value="${esc(full(t))}"></label><button class="${PILL}" data-a="ren">Rename</button></div><div class="${CAP} truncate pt-0">${esc(F[t.f].n)}/${fileOf(t)}</div>
 <div class="px-1">
-<button class="${RW}" data-a="tstar" data-i="${S.cur}">${ic("star")}<span class="flex-1">${t.s ? "Remove bookmark" : "Bookmark"}</span></button>
+<button class="${RW}" data-a="tstar" data-i="${S.cur}">${ic("star")}<span class="flex-1">${t.s ? "Unstar" : "Star"}</span></button>
 <button class="${RW}" data-a="tdup" data-i="${S.cur}">${ic("copy")}<span class="flex-1">Duplicate tab</span></button>
 <button class="${RW}" data-a="dl">${ic("dl")}<span class="flex-1">Download as ${esc(dx(t)) || "file"}</span></button>
 <button class="${RW}" data-a="cus">${ic("spark")}<span class="flex-1">Clean up text</span></button>
@@ -434,6 +483,7 @@
     // Text font: Monospace, Sans, or any installed font (queryLocalFonts after a click; common-font list if that is missing or refused)
     const FB = ["Cascadia Code", "Consolas", "Courier New", "Menlo", "Monaco", "SF Mono", "Roboto Mono", "Segoe UI", "Arial", "Helvetica", "Verdana", "Trebuchet MS", "Calibri", "Georgia", "Times New Roman", "Roboto", "Inter"];
     let LF = null, LFX = !window.queryLocalFonts;
+    let PF = null; // font size picked in Settings but not applied yet
     const rf = () => { show(); if (shOpen()) setS() };
     function fontSel() {
       const c = S.font || "mono", fam = LF || FB, ex = c !== "mono" && c !== "sans" && !fam.includes(c) ? [c] : [], o = a => a.map(x => `<option value="${esc(x)}" ${x === c ? "selected" : ""}>${esc(x)}</option>`).join("");
@@ -454,7 +504,7 @@
 ${LB("Theme")}<div class="px-3 pb-1"><div class="${SEG}">${["auto", "light", "dark"].map(k => `<button class="${segB(S.theme === k)}" aria-pressed="${S.theme === k}" data-a="th" data-v="${k}">${k[0].toUpperCase() + k.slice(1)}</button>`).join("")}</div></div>
 ${LB("Color", THEMES[pal].name)}<div class="flex gap-2 px-3 pb-1">${Object.keys(THEMES).map(k => { const on = pal === k; return `<button class="grid size-6 place-items-center rounded-full text-white ${on ? "ring-2 ring-slate-900 ring-offset-2 ring-offset-slate-50 dark:ring-slate-50 dark:ring-offset-slate-900" : ""}" title="${THEMES[k].name}" aria-label="${THEMES[k].name}" aria-pressed="${on}" data-a="pal" data-v="${k}" style="background:${accentHex(k, 500)}">${on ? ic("chk", "size-3.5 stroke-[3]") : ""}</button>`}).join("")}</div>
 ${DV}${HD("Text")}
-<div class="${RW}"><span class="flex-1">Size</span><button class="${PILL}" data-a="fs" data-d="-1" aria-label="Smaller">A−</button><b class="w-8 text-center tabular-nums">${S.fs}</b><button class="${PILL}" data-a="fs" data-d="1" aria-label="Larger">A+</button></div>
+<div class="${RW}"><span class="flex-1">Size</span><button class="${PILL}" data-a="fs" data-d="-1" aria-label="Smaller">A−</button><b class="pfv w-8 text-center tabular-nums">${PF ?? S.fs}</b><button class="${PILL}" data-a="fs" data-d="1" aria-label="Larger">A+</button><button class="${PILL} ${PF != null && PF !== S.fs ? "!bg-violet-600 !text-white" : "opacity-40"}" data-a="fsa" ${PF != null && PF !== S.fs ? "" : "disabled"}>Apply</button></div>
 ${LB("Font")}<div class="relative px-3 pb-1">${fontSel()}<svg class="pointer-events-none absolute right-6 top-3 size-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
 ${DV}${HD("Editor")}
 ${[["wrap", "Word wrap", S.wrap !== false], ["ln", "Line numbers", !!S.ln], ["spell", "Spell check", S.spell !== false]].map(tg).join("")}
@@ -506,7 +556,7 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
     function tabS(i) {
       const x = S.tabs[i], f = F[x.f];
       sheet(`<div class="flex gap-2 px-3 pb-1 pt-4"><label class="${INP} flex items-center focus-within:!border-violet-500 dark:focus-within:!border-violet-400"><input id="rn" class="min-w-0 flex-1 bg-transparent font-semibold outline-none" placeholder="${esc(D(x))}" aria-label="Tab name" value="${esc(full(x))}"></label><button class="${PILL}" data-a="trn" data-i="${i}">Rename</button></div><div class="${CAP} truncate pt-0">${esc(f.n)}/${fileOf(x)}</div>
-<button class="${RW}" data-a="tstar" data-i="${i}">${ic("star")}<span class="flex-1">${x.s ? "Remove bookmark" : "Bookmark"}</span></button>
+<button class="${RW}" data-a="tstar" data-i="${i}">${ic("star")}<span class="flex-1">${x.s ? "Unstar" : "Star"}</span></button>
 <button class="${RW}" data-a="tmv" data-i="${i}">${ic("fold")}<span class="flex-1">Move to folder<small class="${SM}">${esc(f.n)}</small></span>${ic("chev").replace("M7 10l5 5 5-5", "M9 6l6 6-6 6")}</button>
 <button class="${RW}" data-a="tdup" data-i="${i}">${ic("copy")}<span>Duplicate</span></button>
 ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("tabs")}<span>Close other tabs</span></button>` : ""}
@@ -541,11 +591,11 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
         fcs: () => { FC = !FC; b.setAttribute("aria-pressed", FC); ed.find.set({ cs: FC }, true) },
         ovo: () => { setH("#note-" + tid(S.tabs[i])); render() },
         nf: () => fSheet(-1, v === "mv"), fe: () => fSheet(i),
-        star: () => { t.s = !t.s; show(); toast(t.s ? "Bookmarked" : "Bookmark removed") },
+        star: () => { t.s = !t.s; show(); toast(t.s ? "Starred" : "Unstarred") },
         om: () => go("#" + { t: "tabs", g: "folders", s: "starred" }[v]), og: () => go(i >= 0 ? "#folders-" + i : "#tabs"),
         swx: () => { setH("#note-" + tid(cur())); render() },
         trn: () => { setN(S.tabs[i], $("#rn").value); close(); afterTabs(); toast("Renamed") },
-        tstar: () => { const x = S.tabs[i]; x.s = !x.s; close(); afterTabs(); toast(x.s ? "Bookmarked" : "Bookmark removed") },
+        tstar: () => { const x = S.tabs[i]; x.s = !x.s; close(); afterTabs(); toast(x.s ? "Starred" : "Unstarred") },
         tmv: () => tmvS(i), tf: () => { S.tabs[i].f = +v; close(); afterTabs(); toast(`Moved to ${F[+v].n}`) },
         tdup: () => { const x = S.tabs[i]; S.tabs.splice(i + 1, 0, { t: x.t, f: x.f, n: x.n && x.n + " copy", x: x.x }); if (S.cur > i) S.cur++; close(); afterTabs(); toast("Duplicated") },
         tnew: () => { const h = "#note-" + tid(S.tabs[i]); close(); flush(); window.open(location.href.split("#")[0] + h, "_blank") },
@@ -569,10 +619,10 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
         ovx: () => closeT(i),
         mv: () => { if (!F[i].ok) return; t.f = i; close(); show(); toast(`Saved in ${F[i].n}`) }, nt: () => add(i),
         top: () => { S.top = !S.top; applyTop(); keep() },
-        fs: () => { S.fs = Math.max(14, Math.min(24, S.fs + +b.dataset.d)); show(); if (shOpen()) setS() }, tg: () => { if (v === "wrap") S.wrap = S.wrap === false; else if (v === "ts") S.ts = S.ts === false; else if (v === "spell") S.spell = S.spell === false; else if (v === "ce") S.ce = S.ce === false; else S.ln = !S.ln; show(); if (shOpen()) setS() }, pal: () => { S.pal = v; theme(); show(); if (shOpen()) setS() }, th: () => { S.theme = v; theme(); show(); if (shOpen()) setS() }, ff: () => { S.font = v; show(); if (shOpen()) setS() },
+        fs: () => { PF = Math.max(6, Math.min(24, (PF ?? S.fs) + +b.dataset.d)); const on = PF !== S.fs; document.querySelectorAll(".pfv").forEach(e => e.textContent = PF); document.querySelectorAll("[data-a=fsa]").forEach(e => { e.disabled = !on; e.classList.toggle("opacity-40", !on); e.classList.toggle("!bg-violet-600", on); e.classList.toggle("!text-white", on) }) }, fsa: () => { S.fs = PF; PF = null; rf() }, tg: () => { if (v === "wrap") S.wrap = S.wrap === false; else if (v === "ts") S.ts = S.ts === false; else if (v === "spell") S.spell = S.spell === false; else if (v === "ce") S.ce = S.ce === false; else S.ln = !S.ln; show(); if (shOpen()) setS() }, pal: () => { S.pal = v; theme(); show(); if (shOpen()) setS() }, th: () => { S.theme = v; theme(); show(); if (shOpen()) setS() }, ff: () => { S.font = v; show(); if (shOpen()) setS() },
         thc: () => { S.theme = { auto: "light", light: "dark", dark: "auto" }[S.theme] || "auto"; theme(); show() },
         ap: () => { if (!S.sbh && (S.sp || "e") === v) S.sbh = 1; else { S.sbh = 0; S.sp = v } app.classList.toggle("sbh", !!S.sbh); show(); if (!S.sbh && v === "s") $("#sq").focus() },
-        fx: () => { const c = S.fc || (S.fc = []), k = c.indexOf(i); k < 0 ? c.push(i) : c.splice(k, 1); show() },
+        sf: () => { SF = i; SFO = 0; SSM = 0; show() }, sfm: () => { SFO = !SFO; SSM = 0; show() }, ssm: () => { SSM = !SSM; SFO = 0; show() }, ss: () => { S.so = v; SSM = 0; keep(); show() }, fx: () => { const c = S.fc || (S.fc = []), k = c.indexOf(i); k < 0 ? c.push(i) : c.splice(k, 1); show() },
         so: () => sOpen(i, +v), mb: () => MBA[v](i), mo: () => mbOpen(v),
         ren: () => { const n = $("#rn").value.trim(); setN(t, n); close(); show(); toast(n ? "Renamed" : "Name follows the first line") },
         del: () => { if (b.dataset.ok !== "1") { b.dataset.ok = "1"; b.textContent = "Tap again to delete. This doesn’t go to History."; return } delT(isNaN(i) ? S.cur : i) },
@@ -616,44 +666,65 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
     document.addEventListener("pointerup", lpUp); document.addEventListener("pointercancel", lpUp);
     document.addEventListener("touchmove", e => { if (LP && LP.drag) e.preventDefault() }, { passive: false });
     document.addEventListener("contextmenu", e => { const el = e.target.closest(".tab, .cd"); if (!el) return; e.preventDefault(); if (!LP || !LP.on) tabS(+el.dataset.i) });
-    // Windows layout (VS Code style): activity bar, sidebar (Explorer, Search, Bookmarks, History), status bar.
+    // Windows layout (VS Code style): activity bar, sidebar (Explorer, Search, Starred, History), status bar.
     // The CSS switches it on above 900px wide; the editor, tabs, Find and sheets are shared with the phone layout.
     const DK = matchMedia("(min-width:900px)"), shOpen = () => $("#sh").classList.contains("flex");
     const SBI = "flex h-7 min-w-0 flex-1 items-center gap-2 rounded px-2 text-left hover:bg-slate-200/70 dark:hover:bg-slate-800",
       SBH = "flex h-7 shrink-0 items-center gap-1 px-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400",
       SBB = "grid size-6 shrink-0 place-items-center rounded text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-800",
       STB = "flex h-full items-center gap-1 px-2 hover:bg-slate-200 dark:hover:bg-slate-800";
-    let SQ = "";
+    let SQ = "", SF = -1, NQ = "", SFO = 0, SSM = 0; // Library panel: folder filter (-1 = all), name filter, folder menu open, sort menu open
+    // Library sort choices (S.so holds the chosen key); each compares two [tab, index] pairs
+    const SRT = [["o", "Open order", null], ["az", "Name, A to Z", (a, b) => D(a[0]).localeCompare(D(b[0]))], ["za", "Name, Z to A", (a, b) => D(b[0]).localeCompare(D(a[0]))],
+      ["me", "Recently edited", (a, b) => (b[0].m || 0) - (a[0].m || 0)], ["oe", "Least recently edited", (a, b) => (a[0].m || 0) - (b[0].m || 0)],
+      ["nc", "Newest first", (a, b) => cAt(b[0]) - cAt(a[0])], ["oc", "Oldest first", (a, b) => cAt(a[0]) - cAt(b[0])],
+      ["st", "Starred first", (a, b) => !!b[0].s - !!a[0].s], ["big", "Largest first", (a, b) => b[0].t.length - a[0].t.length]];
+    // the folder and sort menus close on a click elsewhere, Escape, or leaving the window (just hidden, no re-render, so the click still lands)
+    const menusX = () => { if (!SFO && !SSM) return; SFO = SSM = 0; $("#sfmenu")?.remove(); $("#ssmenu")?.remove(); document.querySelectorAll("#sb [data-a=sfm],#sb [data-a=ssm]").forEach(b => b.setAttribute("aria-expanded", "false")) };
+    document.addEventListener("mousedown", e => { if (!e.target.closest("#sfmenu,#ssmenu,[data-a=sfm],[data-a=ssm]")) menusX() }, true);
+    document.addEventListener("keydown", e => { if (e.key === "Escape") menusX() });
+    addEventListener("blur", menusX);
     function abR() {
       const B = "relative grid size-10 place-items-center rounded-lg text-slate-500 hover:text-slate-900 aria-pressed:text-violet-600 aria-pressed:before:absolute aria-pressed:before:inset-y-1.5 aria-pressed:before:-left-1 aria-pressed:before:w-0.5 aria-pressed:before:rounded-full aria-pressed:before:bg-violet-600 aria-pressed:before:content-[''] dark:text-slate-400 dark:hover:text-white dark:aria-pressed:text-violet-400 dark:aria-pressed:before:bg-violet-400";
-      $("#ab").innerHTML = [["e", "copy", "Explorer (Ctrl+B)"], ["s", "find", "Search all tabs"], ["b", "star", "Bookmarks"], ["h", "history", "History"]].map(([k, n, l]) => `<button data-a="ap" data-v="${k}" aria-label="${l}" title="${l}" aria-pressed="${!S.sbh && (S.sp || "e") === k}" class="${B}">${ic(n)}</button>`).join("") +
-        `<div class="flex-1"></div><button data-a="ap" data-v="g" aria-label="Settings" title="Settings" aria-pressed="${!S.sbh && S.sp === "g"}" class="${B}">${ic("gear")}</button>`
+      $("#ab").innerHTML = [["e", "copy", "Explorer (Ctrl+B)", "Library"], ["h", "history", "History", "History"]].map(([k, n, l, t]) => `<button data-a="ap" data-v="${k}" aria-label="${l}" title="${l}" aria-pressed="${!S.sbh && (S.sp || "e") === k}" class="${B} tb">${ic(n)}<span>${t}</span></button>`).join("") +
+        ``
     }
-    // one open tab as a sidebar row (class cd: right-click or long-press opens its tab menu)
-    const fRow = (x, i, pl = "") => `<div class="cd group/r relative flex items-center rounded ${i === S.cur ? "bg-violet-100 text-slate-900 dark:bg-violet-500/20 dark:text-white" : ""}" data-i="${i}"><button data-a="ovo" data-i="${i}" class="${SBI} ${pl} pr-7"><span class="size-2 shrink-0 rounded-full ${dot(F[x.f])}"></span><span class="truncate">${esc(D(x))}</span></button><button data-a="tcl" data-i="${i}" aria-label="Close tab" title="Close" class="${SBB} absolute right-0.5 hidden group-hover/r:grid">${ic("x", "size-3.5 stroke-2")}</button></div>`;
+    // one note as a sidebar card (class cd: right-click or long-press opens its tab menu)
+    const fRow = (x, i) => `<div class="cd group/r relative rounded-md ${i === S.cur ? "nc-on" : "hover:bg-slate-500/5"}" data-i="${i}"><button data-a="ovo" data-i="${i}" class="flex h-8 w-full min-w-0 items-center gap-2.5 px-3 ${x.s ? "pr-14" : "pr-8 group-hover/r:pr-14"} text-left"><span class="ni ${tx(F[x.f])}">${ic("doc", "size-4 stroke-2")}</span><span class="truncate ${i === S.cur ? "font-semibold" : ""}">${esc(D(x))}</span></button><button data-a="tstar" data-i="${i}" aria-label="${x.s ? "Unstar" : "Star"}" title="${x.s ? "Unstar" : "Star"}" class="${SBB} absolute right-7 top-1 ${x.s ? "grid !text-amber-500 dark:!text-amber-400" : "hidden group-hover/r:grid"}">${ic("star", "size-4 stroke-2" + (x.s ? " !fill-current" : ""))}</button><button data-a="tcl" data-i="${i}" aria-label="Close tab" title="Close" class="${SBB} absolute right-1.5 top-1 hidden group-hover/r:grid">${ic("x", "size-3.5 stroke-2")}</button></div>`;
+    // the Library list: filtered by folder and name, then recently closed notes
+    function nlR() {
+      const q = NQ.trim().toLowerCase(), ok = x => (SF < 0 || x.f === SF) && (!q || D(x).toLowerCase().includes(q));
+      const xs = S.tabs.map((x, i) => [x, i]).filter(r => !r[0].w && ok(r[0])); const so = SRT.find(r => r[0] === S.so); if (so && so[2]) xs.sort(so[2]);
+      const cs = S.closed.map((x, i) => [x, i]).filter(r => r[0].t.trim() && ok(r[0])).slice(0, 12);
+      return (xs.map(([x, i]) => fRow(x, i)).join("") || (cs.length ? "" : `<div class="px-3 py-2 text-slate-500 dark:text-slate-400">${q ? "No matches." : "No notes here yet."}</div>`)) +
+        (cs.length ? `<div class="px-3 pb-1 pt-4 text-[11px] font-medium text-slate-400">Recently closed</div>` + cs.map(([x, i]) => `<div class="group/r relative rounded-md hover:bg-slate-500/5"><button data-a="hopen" data-i="${i}" title="Closed. Click to reopen." class="flex h-8 w-full min-w-0 items-center gap-2.5 px-3 pr-8 text-left text-slate-500 dark:text-slate-400"><span class="text-slate-400">${ic("doc", "size-4 stroke-2")}</span><span class="truncate">${esc(D(x))}</span></button><button data-a="hdel" data-i="${i}" aria-label="Delete file" title="Delete file" class="${SBB} absolute right-1.5 top-1 hidden group-hover/r:grid">${ic("x", "size-3.5 stroke-2")}</button></div>`).join("") : "")
+    }
     function sbR() {
-      const p = S.sp || "e", h = (l, x = "") => `<div class="${SBH} h-9">${l}<div class="flex-1"></div>${x}</div>`, L = s => `<div class="min-h-0 flex-1 overflow-y-auto px-1.5 pb-3">${s}</div>`;
+      const p = S.sp || "e", h = (l, x = "") => `<div class="flex h-12 shrink-0 items-center gap-1 px-4 text-[15px] font-semibold text-slate-800 dark:text-slate-100">${l}<div class="flex-1"></div>${x}</div>`, L = s => `<div class="min-h-0 flex-1 overflow-y-auto px-1.5 pb-3">${s}</div>`;
       let o;
       if (p === "e") {
-        const fc = S.fc || [];
-        o = h("Explorer", `<button data-a="new" class="${SBB}" aria-label="New tab" title="New tab (Ctrl+N)">${ic("plus", "size-4 stroke-2")}</button><button data-a="nf" class="${SBB}" aria-label="New folder" title="New folder">${ic("fold", "size-4 stroke-2")}</button>`) +
-          L(`<div class="${SBH} !px-1.5">Folders</div>` + F.map((f, k) => {
-              const op = !fc.includes(k), xs = S.tabs.map((x, i) => [x, i]).filter(r => r[0].f === k && !r[0].w), cs = S.closed.map((x, i) => [x, i]).filter(r => r[0].f === k);
-              return `<div class="group/f flex items-center rounded hover:bg-slate-200/70 dark:hover:bg-slate-800"><button data-a="fx" data-i="${k}" aria-expanded="${op}" class="flex h-7 min-w-0 flex-1 items-center gap-1.5 px-1 text-left font-medium">${ic("chev", "size-4 stroke-2 transition-transform " + (op ? "" : "-rotate-90"))}<span class="${tx(f)}">${ic("fold", "size-4 stroke-2")}</span><span class="truncate">${esc(f.n)}</span><span class="ml-auto pr-1.5 text-[11px] text-slate-400 group-hover/f:hidden">${xs.length + cs.length || ""}</span></button><span class="hidden pr-0.5 group-hover/f:flex"><button data-a="nt" data-i="${k}" class="${SBB}" aria-label="New tab in ${esc(f.n)}" title="New tab here">${ic("plus", "size-4 stroke-2")}</button><button data-a="fe" data-i="${k}" class="${SBB}" aria-label="Edit folder" title="Edit folder">${ic("edit", "size-4 stroke-2")}</button></span></div>` +
-                (op ? xs.map(([x, i]) => fRow(x, i, "pl-7")).join("") + cs.map(([x, i]) => `<div class="group/r relative flex items-center"><button data-a="hopen" data-i="${i}" title="Closed. Click to open." class="${SBI} pl-7 pr-7 text-slate-500 dark:text-slate-400"><span class="size-2 shrink-0 rounded-full border ${dot(F[x.f]).replace("bg-", "border-")}"></span><span class="truncate">${esc(D(x))}</span></button><button data-a="hdel" data-i="${i}" aria-label="Delete file" title="Delete file" class="${SBB} absolute right-0.5 hidden group-hover/r:grid">${ic("x", "size-3.5 stroke-2")}</button></div>`).join("") : "")
-            }).join(""))
+        if (SF >= F.length) SF = -1;
+        const cnt = k => S.tabs.filter(x => !x.w && (k < 0 || x.f === k)).length, cf = SF < 0 ? null : F[SF], mi = (k, l, dt) => `<button data-a="sf" data-i="${k}" class="flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13px] hover:bg-slate-500/10 ${SF === k ? "font-semibold" : ""}">${dt}<span class="min-w-0 flex-1 truncate">${l}</span><span class="text-xs text-slate-400">${cnt(k) || ""}</span></button>`;
+        const bt = (cf ? `<button data-a="fe" data-i="${SF}" class="${SBB}" aria-label="Edit folder" title="Edit folder">${ic("edit", "size-4 stroke-2")}</button>` : "") + `<button ${cf ? `data-a="nt" data-i="${SF}"` : 'data-a="new"'} class="${SBB}" aria-label="New note" title="New note (Ctrl+N)">${ic("plus", "size-4 stroke-2")}</button><button data-a="nf" class="${SBB}" aria-label="New folder" title="New folder">${ic("fold", "size-4 stroke-2")}</button>`;
+        o =
+          `<div class="relative flex shrink-0 items-center gap-1 px-3 pb-2 pt-1"><button data-a="sfm" aria-expanded="${!!SFO}" class="flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13px] hover:bg-slate-500/10">${cf ? `<span class="size-2 shrink-0 rounded-full ${dot(cf)}"></span>` : ic("tabs", "size-4 stroke-2 text-slate-400")}<span class="min-w-0 flex-1 truncate font-medium">${cf ? esc(cf.n) : "All folders"}</span><span class="text-xs text-slate-400">${cnt(SF)}</span>${ic("chev", "size-4 stroke-2 text-slate-400 transition-transform " + (SFO ? "rotate-180" : ""))}</button>${bt}` +
+          (SFO ? `<div id="sfmenu" class="absolute inset-x-3 top-10 z-10 rounded-lg border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-800">` + mi(-1, "All folders", ic("tabs", "size-4 stroke-2 text-slate-400")) + F.map((f, k) => mi(k, esc(f.n), `<span class="size-2 shrink-0 rounded-full ${dot(f)}"></span>`)).join("") + `</div>` : "") + `</div>` +
+          `<div class="flex shrink-0 items-center gap-1 px-3 pb-2"><label class="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-lg bg-slate-500/10 px-2.5 text-slate-500 dark:text-slate-400">${ic("find", "size-4 stroke-2")}<input id="nq" value="${esc(NQ)}" placeholder="Search" autocomplete="off" aria-label="Filter notes by name" class="min-w-0 flex-1 bg-transparent text-[13px] text-slate-900 outline-none placeholder:text-slate-500 dark:text-slate-100 dark:placeholder:text-slate-400"></label><button data-a="ssm" aria-expanded="${!!SSM}" class="${SBB} !size-8" aria-label="Sort" title="Sort: ${(SRT.find(r => r[0] === S.so) || SRT[0])[1]}">${ic("srt", "size-4 stroke-2")}</button></div>` +
+          (SSM ? `<div id="ssmenu" class="absolute right-3 top-[148px] z-10 w-52 rounded-lg border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-800">` + SRT.map(([k, l]) => `<button data-a="ss" data-v="${k}" class="flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13px] hover:bg-slate-500/10 ${(S.so || "o") === k ? "font-semibold" : ""}"><span class="grid size-4 place-items-center text-violet-600 dark:text-violet-400">${(S.so || "o") === k ? ic("chk", "size-4 stroke-2") : ""}</span>${l}</button>`).join("") + `</div>` : "") +
+          L(`<div id="nl">${nlR()}</div>`)
       } else if (p === "s") {
         o = h("Search") + `<div class="shrink-0 px-2 pb-2"><input id="sq" class="w-full rounded-md border border-slate-300 bg-white px-2 py-1 outline-none placeholder:text-slate-500 focus:border-violet-500 dark:border-slate-700 dark:bg-slate-900 dark:placeholder:text-slate-400" placeholder="Search all tabs" value="${esc(SQ)}" autocomplete="off"></div>` + L(`<div id="sr"></div>`)
       } else if (p === "g") {
         o = h("Settings") + L(`<div class="stg">${stgH()}</div>`)
       } else if (p === "b") {
         const xs = S.tabs.map((x, i) => [x, i]).filter(r => r[0].s);
-        o = h("Bookmarks") + L(xs.length ? xs.map(([x, i]) => fRow(x, i)).join("") : `<div class="px-2 py-1 text-slate-500 dark:text-slate-400">No bookmarks yet. Use the star in the menu to bookmark a tab.</div>`)
+        o = h("Starred") + L(xs.length ? xs.map(([x, i]) => fRow(x, i)).join("") : `<div class="px-2 py-1 text-slate-500 dark:text-slate-400">No starred tabs yet. Use the star in the menu to star a tab.</div>`)
       } else {
         o = h("History", S.closed.length ? `<button data-a="hclr" class="rounded px-1.5 py-0.5 normal-case tracking-normal text-red-600 hover:bg-slate-200 dark:text-red-400 dark:hover:bg-slate-800">Clear all</button>` : "") +
           L(S.closed.length ? S.closed.map((x, i) => !x.t.trim() ? "" : `<div class="group/r relative flex items-center"><button data-a="hopen" data-i="${i}" class="${SBI} pr-7" title="Reopen"><span class="truncate">${esc(D(x))}</span><span class="ml-auto shrink-0 text-slate-400">${esc(F[x.f].n)}</span></button><button data-a="hdel" data-i="${i}" aria-label="Remove from History" title="Remove from History" class="${SBB} absolute right-0.5 hidden group-hover/r:grid">${ic("x", "size-3.5 stroke-2")}</button></div>`).join("") : `<div class="px-2 py-1 text-slate-500 dark:text-slate-400">No closed tabs yet.</div>`)
       }
       $("#sbc").innerHTML = o;
+      if (p === "e") $("#nq").oninput = e => { NQ = e.target.value; $("#nl").innerHTML = nlR() };
       if (p === "s") { $("#sq").oninput = e => { SQ = e.target.value; srR() }; srR() }
     }
     // search results: each tab with matches, then up to 5 matching lines
@@ -680,7 +751,7 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
     DK.addEventListener("change", () => show());
     // Menu bar (File, Edit, View, Help) like VS Code; most items reuse the data-a actions above
     const dlF = (n, s, ty = "text/plain;charset=utf-8") => { const u = URL.createObjectURL(new Blob([s], { type: ty })), l = document.createElement("a"); l.href = u; l.download = n; l.click(); setTimeout(() => URL.revokeObjectURL(u), 1000) };
-    const zm = d => { S.fs = Math.max(14, Math.min(24, S.fs + d)); show() };
+    const zm = d => { S.fs = Math.max(6, Math.min(24, S.fs + d)); show() };
     let FOM = "", MO = ""; // FOM: what the file picker is for ("bk" = restore a backup); MO: open menu
     const MBA = {
       dl: () => { const t = cur(); dlF(fileOf(t), t.t); toast(`Downloaded ${fileOf(t)}`) },
@@ -728,8 +799,8 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
         ["Delete file", 'data-a="mb" data-v="del"']],
       Edit: () => [["Undo", 'data-a="mb" data-v="un"', "Ctrl+Z"], ["Redo", 'data-a="mb" data-v="re"', "Ctrl+Y"], ["Select all", 'data-a="mb" data-v="sel"', "Ctrl+A"], "-",
         ["Find", 'data-a="mb" data-v="find"', "Ctrl+F"], ["Replace", 'data-a="mb" data-v="rpl"', "Ctrl+H"], ["Search all tabs", 'data-a="mb" data-v="sa"', "Ctrl+Shift+F"], "-",
-        ["Clean up text…", 'data-a="cus"'], [cur().s ? "Remove bookmark" : "Bookmark", 'data-a="star"']],
-      View: () => [["Command palette…", 'data-a="mb" data-v="cp"', "Ctrl+Shift+P"], ["Go to tab…", 'data-a="mb" data-v="qo"', "Ctrl+P"], "-", ...[["e", "Explorer"], ["s", "Search"], ["b", "Bookmarks"], ["h", "History"]].map(([k, l]) => [l, `data-a="ap" data-v="${k}"`, "", !S.sbh && (S.sp || "e") === k]),
+        ["Clean up text…", 'data-a="cus"'], [cur().s ? "Unstar" : "Star", 'data-a="star"']],
+      View: () => [["Command palette…", 'data-a="mb" data-v="cp"', "Ctrl+Shift+P"], ["Go to tab…", 'data-a="mb" data-v="qo"', "Ctrl+P"], "-", ...[["e", "Explorer"], ["s", "Search"], ["b", "Starred"], ["h", "History"]].map(([k, l]) => [l, `data-a="ap" data-v="${k}"`, "", !S.sbh && (S.sp || "e") === k]),
         ["Sidebar", 'data-a="mb" data-v="sb"', "Ctrl+B", !S.sbh], "-",
         ["Word wrap", 'data-a="tg" data-v="wrap"', "Alt+Z", S.wrap !== false], ["Line numbers", 'data-a="tg" data-v="ln"', "", !!S.ln], ["Spell check", 'data-a="tg" data-v="spell"', "", S.spell !== false], ["Remove empty files", 'data-a="tg" data-v="ce"', "", S.ce !== false], "-",
         ["Bigger text", 'data-a="mb" data-v="zi"', "Ctrl+="], ["Smaller text", 'data-a="mb" data-v="zo"', "Ctrl+−"],
@@ -745,10 +816,10 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
     function mbR() {
       // installed app: Windows already shows the app name and icon in its title bar (the browser tab shows the icon too)
       document.title = SA.matches ? D(cur()) : D(cur()) + " · Rough Notepad";
-      $("#mb").innerHTML = `<span class="w-1"></span>` +
+      $("#mb").innerHTML = `<button data-a="mb" data-v="sb" aria-label="Toggle sidebar" title="Toggle sidebar (Ctrl+B)" aria-pressed="${!S.sbh}" class="grid h-full w-9 place-items-center text-slate-500 hover:bg-slate-200 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white">${ic("side", "size-4 stroke-2")}</button><span class="w-1"></span>` +
         Object.keys(MN).map(k => `<button data-a="mo" data-v="${k}" aria-haspopup="menu" aria-expanded="${MO === k}" class="${MBT}">${k}</button>`).join("") +
         `<div class="flex-1"></div>` +
-        `<button data-a="mb" data-v="sb" aria-label="Toggle sidebar" title="Toggle sidebar (Ctrl+B)" aria-pressed="${!S.sbh}" class="-mr-1.5 grid h-full w-9 place-items-center text-slate-500 hover:bg-slate-200 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white">${ic("side", "size-4 stroke-2")}</button>` +
+        `<button data-a="ap" data-v="g" aria-label="Settings" title="Settings" class="grid h-full w-9 place-items-center text-slate-500 hover:bg-slate-200 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white">${ic("gear", "size-4 stroke-2")}</button>` +
         (MO ? `<div id="mbm" role="menu" class="absolute top-full z-30 mt-0.5 min-w-[240px] ${MNU}">${MN[MO]().map(it).join("")}</div>` : "");
       if (MO) $("#mbm").style.left = $(`#mb [data-v=${MO}]`).offsetLeft + "px"
     }
@@ -785,7 +856,7 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
       const x = S.tabs[i], d = `data-i="${i}"`;
       cx.innerHTML = [["Close", `data-a="tcl" ${d}`], ["Close others", `data-a="tco" ${d}`, "", 0, S.tabs.length < 2], ["Close all", 'data-a="tca"'], "-",
         ["Rename…", `data-a="mb" data-v="ren" ${d}`, "F2"], ["Move to folder…", `data-a="tmv" ${d}`], ["Duplicate", `data-a="tdup" ${d}`], ["Open in new tab", `data-a="tnew" ${d}`], ["Copy text", `data-a="tcopy" ${d}`],
-        [x.s ? "Remove bookmark" : "Bookmark", `data-a="tstar" ${d}`], "-", ["Delete file", `data-a="mb" data-v="del" ${d}`, "", 0, 0, "text-red-600 dark:text-red-400"]].map(it).join("");
+        [x.s ? "Unstar" : "Star", `data-a="tstar" ${d}`], "-", ["Delete file", `data-a="mb" data-v="del" ${d}`, "", 0, 0, "text-red-600 dark:text-red-400"]].map(it).join("");
       cx.style.display = "block"; const r = cx.getBoundingClientRect();
       cx.style.left = Math.min(px, innerWidth - r.width - 4) + "px"; cx.style.top = Math.min(py, innerHeight - r.height - 4) + "px"
     }
