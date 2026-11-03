@@ -4,12 +4,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
-  <title>Scratchpad for phone</title>
+  <title>rPad</title>
   <meta name="theme-color" content="#f9f8fc" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#190f2a" media="(prefers-color-scheme: dark)">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Scratchpad">
+  <meta name="apple-mobile-web-app-title" content="rPad">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/icon-maskable.svg">
@@ -784,7 +784,7 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
       ren: i => { i = isNaN(i) ? S.cur : i; const x = S.tabs[i]; sheet(`<h3 class="${H3}">Rename</h3><div class="flex gap-2 px-3 pb-3"><input id="rn" class="${INP}" placeholder="${esc(D(x))}" value="${esc(full(x))}"><button class="${PILL}" data-a="trn" data-i="${i}">Rename</button></div>`); $("#rn").focus(); $("#rn").select() },
       zi: () => zm(1), zo: () => zm(-1), del: i => delT(isNaN(i) ? S.cur : i),
       keys: () => sheet(`<h3 class="${H3}">Keyboard shortcuts</h3>` + [["New tab", "Ctrl+Alt+N"], ["Open file", "Ctrl+O"], ["Download", "Ctrl+S"], ["Rename tab", "F2"], ["Undo / Redo", "Ctrl+Z / Ctrl+Y"], ["Find", "Ctrl+F"], ["Replace", "Ctrl+H"], ["Search all tabs", "Ctrl+Shift+F"], ["Show or hide sidebar", "Ctrl+B"], ["Word wrap", "Alt+Z"], ["Text size", "Ctrl+= / Ctrl+−"]].map(([l, k]) => `<div class="${RW}"><span class="flex-1">${l}</span><kbd class="font-mono text-[13px] text-slate-500 dark:text-slate-400">${k}</kbd></div>`).join("")),
-      about: () => toast("Just Perfect Rough Notepad v0.0.0-alpha. Plain text, saved in this browser.")
+      about: () => toast("rPad v0.0.0-alpha. Just Perfect Rough Notepad. Plain text, saved in this browser.")
     };
     // restore a backup: adds its tabs (skipping ones already open) and any folders it needs
     function restore(s) {

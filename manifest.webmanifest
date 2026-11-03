@@ -1,7 +1,7 @@
 ﻿{
-  "name": "Just Perfect Rough Notepad",
-  "short_name": "Notepad",
-  "description": "A fast plain-text scratchpad. Notes stay on this device.",
+  "name": "rPad",
+  "short_name": "rPad",
+  "description": "Just Perfect Rough Notepad. Fast plain text, saved on this device.",
   "start_url": "./Scratchpad%20for%20phone.html",
   "scope": "./",
   "display": "standalone",
