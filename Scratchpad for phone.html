@@ -79,17 +79,18 @@
       #tabs .tab.on::after { top: 0; bottom: auto }
       #ed .cm-scroller { scrollbar-gutter: stable }
       /* Look: separate rounded cards on a backdrop, pill tabs, borderless chrome (same layout as before) */
-      #app { padding: 0 8px 8px; column-gap: 0; grid-template-columns: 0 var(--sbw, 260px) minmax(0, 1fr); background: rgb(var(--n200)) }
+      #app { padding: 0 8px; grid-template-rows: 30px auto auto auto auto minmax(0, 1fr) 32px; column-gap: 0; grid-template-columns: 0 var(--sbw, 260px) minmax(0, 1fr); background: rgb(var(--n200)) }
       #app.sbh { grid-template-columns: 0 0 minmax(0, 1fr) }
       .dark #app { background: rgb(var(--n950)) }
       #mb, #st, #ab { background: transparent; border: 0 }
-      #st { padding: 0 4px; font-size: 12px; color: rgb(var(--n700)) }
+      #st { padding: 0; align-items: center; font-size: 12px; color: rgb(var(--n700)) }
       .dark #st { color: rgb(var(--n300)) }
-      #st > * { border-radius: 6px; padding: 2px 10px }
+      #st > * { border-radius: 6px; padding: 2px 12px; line-height: 20px }
       #st > button:hover, #st > [data-a]:hover { background: rgb(var(--n500) / .15) }
-      #sb { margin-right: 8px; padding-top: 44px; background: rgb(var(--n50)); border: 1px solid rgb(var(--n300)); border-radius: 12px; overflow: hidden; box-shadow: 0 1px 2px rgb(0 0 0 / .04) }
+      #sb { margin-right: 8px; padding-top: 44px; background: rgb(var(--n50)); border: 1px solid rgb(var(--n300)); border-radius: 12px; box-shadow: 0 1px 2px rgb(0 0 0 / .04) }
+      #sbc { overflow: hidden; border-radius: 0 0 11px 11px }
       .dark #sb { background: rgb(var(--n900)); border-color: rgb(var(--n800)) }
-      #rz { right: 0 }
+      #rz { right: -8px; width: 8px; border-radius: 4px }
       #tr { height: 42px; background: rgb(var(--n50)); border: 1px solid rgb(var(--n300)); border-bottom: 0; border-radius: 12px 12px 0 0 }
       .dark #tr { background: rgb(var(--n900)); border-color: rgb(var(--n800)) }
       #ed { margin: 0; background: rgb(var(--n50)); border: 1px solid rgb(var(--n300)); border-top: 0; border-radius: 0 0 12px 12px; overflow: hidden }
@@ -119,6 +120,11 @@
   @media (hover:hover) and (pointer:fine){
     #ed .cm-scroller::-webkit-scrollbar{width:14px;height:14px;background:transparent}
     #ed .cm-scroller::-webkit-scrollbar-track,#ed .cm-scroller::-webkit-scrollbar-corner{background:transparent}
+    @keyframes shF{from{opacity:0}} @keyframes shU{from{transform:translateY(100%)}} @keyframes shP{from{opacity:0;transform:translateY(-10px) scale(.97)}}
+    #sh{overflow:hidden;overscroll-behavior:contain} #sh.flex{animation:shF .2s ease-out} #sh.flex #sheet{animation:shU .3s cubic-bezier(.2,.8,.2,1)}
+    #sh.out{animation:shF .18s ease-in reverse forwards} #sh.out #sheet{animation:shU .18s ease-in reverse forwards}
+    @media (min-width:900px){#sh.flex #sheet{animation:shP .18s cubic-bezier(.2,.8,.2,1)} #sh.out #sheet{animation:shP .12s ease-in reverse forwards}}
+    @media (prefers-reduced-motion:reduce){#sh,#sh #sheet{animation:none!important}}
     #ed .cm-scroller::-webkit-scrollbar-thumb{background:rgb(var(--n500)/.3);border:3px solid transparent;background-clip:padding-box;border-radius:7px;min-height:40px;min-width:40px;transition:background-color .15s}
     #ed .cm-scroller:hover::-webkit-scrollbar-thumb{background-color:rgb(var(--n500)/.45)}
     #ed .cm-scroller::-webkit-scrollbar-thumb:hover{background-color:rgb(var(--n500)/.75)}
@@ -330,7 +336,7 @@
     const go = h => skip != null ? (skip = h, 0) : location.hash === h ? render() : (location.hash = h);
     addEventListener("popstate", () => {
       if (skip != null) { const h = skip; skip = null; if (location.hash !== h) { history.replaceState(null, "", h); render() } }
-      else if (shH) { shH = 0; $("#sh").classList.replace("flex", "hidden") }
+      else if (shH) { shH = 0; clearTimeout(shT); $("#sh").classList.replace("flex", "hidden"); $("#sh").classList.remove("out") }
     });
     const swv = on => { app.classList.toggle("insw", on); $("#sw").classList.toggle("hidden", !on); $("#sw").classList.toggle("flex", on); if (DK.matches) mbR() };
     function render() {
@@ -420,14 +426,15 @@
       const b = e.target.closest("[data-f]"); if (!b) return; const f = b.dataset.f;
       if (f === "kb") ed.blur(); else if (f === "cu") cuS(); else if (f === "un") undo(); else if (f === "re") redo(); else ed.format(f)
     });
-    let shF = null; // focus to restore when the sheet closes
+    let shF = null, shT = 0; // focus to restore when the sheet closes
     function sheet(h) {
-      const s = $("#sheet"); s.innerHTML = '<div class="hdl mx-auto mb-2 h-1 w-9 rounded-full bg-slate-300 dark:bg-slate-600"></div>' + h; s.style.transform = "";
+      const s = $("#sheet"); s.innerHTML = h; s.style.transform = ""; clearTimeout(shT); $("#sh").classList.remove("out");
       if (!shH) { shF = document.activeElement; shH = 1; history.pushState({ sh: 1 }, "") }
       $("#sh").classList.replace("hidden", "flex"); s.focus()
     }
     const close = () => {
-      if (!$("#sh").classList.replace("flex", "hidden")) return;
+      const sh = $("#sh"); if (!sh.classList.contains("flex") || sh.classList.contains("out")) return;
+      sh.classList.add("out"); shT = setTimeout(() => { sh.classList.replace("flex", "hidden"); sh.classList.remove("out") }, 180);
       if (shH) { shH = 0; skip = location.hash; history.back() }
       if (shF && shF !== ed.dom && document.contains(shF)) shF.focus(); shF = null
     };
@@ -887,7 +894,7 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
     // drag the sidebar's right edge to resize it
     const rz = $("#rz");
     rz.onpointerdown = e => { rz.setPointerCapture(e.pointerId); e.preventDefault() };
-    rz.onpointermove = e => { if (!rz.hasPointerCapture(e.pointerId)) return; S.sbw = Math.round(Math.max(170, Math.min(520, e.clientX - 48))); app.style.setProperty("--sbw", S.sbw + "px") };
+    rz.onpointermove = e => { if (!rz.hasPointerCapture(e.pointerId)) return; S.sbw = Math.round(Math.max(170, Math.min(520, e.clientX - 12))); app.style.setProperty("--sbw", S.sbw + "px") };
     rz.onpointerup = () => keep();
     if (S.sbw) app.style.setProperty("--sbw", S.sbw + "px"); app.classList.toggle("sbh", !!S.sbh);
     addEventListener("hashchange", render);
