@@ -151,6 +151,7 @@
   @media (hover:hover) and (pointer:fine){
     #ed .cm-scroller::-webkit-scrollbar{width:14px;height:14px;background:transparent}
     #ed .cm-scroller::-webkit-scrollbar-track,#ed .cm-scroller::-webkit-scrollbar-corner{background:transparent}
+    @keyframes svP{45%{transform:scale(.6);opacity:.3}} .sv{animation:svP .8s ease-in-out}
     @keyframes shF{from{opacity:0}} @keyframes shU{from{transform:translateY(100%)}} @keyframes shP{from{opacity:0;transform:translateY(-10px) scale(.97)}}
     #sh{overflow:hidden;overscroll-behavior:contain} #sh.flex{animation:shF .2s ease-out} #sh.flex #sheet{animation:shU .3s cubic-bezier(.2,.8,.2,1)}
     #sh.out{animation:shF .18s ease-in reverse forwards} #sh.out #sheet{animation:shU .18s ease-in reverse forwards}
@@ -292,7 +293,7 @@
       </div>
     </div>
     <div id="ts" role="status" aria-live="polite"
-      class="pointer-events-none absolute inset-x-0 bottom-20 z-50 mx-auto w-fit max-w-[85%] rounded-full bg-slate-900 px-4 py-2.5 text-sm text-white opacity-0 shadow-lg transition-opacity dark:bg-slate-100 dark:text-slate-900">
+      class="pointer-events-none absolute inset-x-0 bottom-20 z-50 mx-auto w-fit max-w-[85%] rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 opacity-0 shadow-2xl transition-opacity min-[600px]:inset-x-auto min-[600px]:bottom-10 min-[600px]:right-4 min-[600px]:mx-0 min-[600px]:max-w-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
     </div>
   </div>
   <script>
@@ -349,7 +350,8 @@
     // Setting "Start with a new note": at start, open an empty Scratchpad note and show it
     if (S.sn && !S.tabs.some(x => x.f === 0 && !x.fp && !x.t && !x.n)) { S.tabs.push({ t: "", f: 0 }); S.cur = S.tabs.length - 1 } S.cur = Math.min(Math.max(+S.cur || 0, 0), S.tabs.length - 1);
     S.closed = (S.closed || []).filter(x => F[x.f]);
-    let kT = 0; const flush = () => { clearTimeout(kT); kT = 0; try { localStorage.setItem("sp-m1", JSON.stringify(S)) } catch (e) { } }, keep = () => { clearTimeout(kT); kT = setTimeout(flush, 500) };
+    // keep() waits 500 ms, then flush() writes the notes to the page storage; the dot of the shown tab pulses in between (see dPulse)
+    let kT = 0; const flush = () => { clearTimeout(kT); kT = 0; try { localStorage.setItem("sp-m1", JSON.stringify(S)) } catch (e) { } dPulse(S.tabs[S.cur]) }, keep = () => { clearTimeout(kT); kT = setTimeout(flush, 500); $("#tabs").children[S.cur]?.firstElementChild?.classList.add("sv") };
     addEventListener("pagehide", () => kT && flush()); addEventListener("visibilitychange", () => kT && flush());
     const cur = () => S.tabs[S.cur];
     // hash routes: #/note/<id>  #/tabs  #/folders  #/folders/<n>  #/starred
@@ -407,7 +409,7 @@
     // un: optional undo callback, shown as an "Undo" button in the toast
     function toast(m, un) {
       const t = $("#ts"), hide = () => { t.classList.replace("opacity-100", "opacity-0"); t.classList.add("pointer-events-none") }; t.textContent = m; t.classList.toggle("pointer-events-none", !un);
-      if (un) { const b = document.createElement("button"); b.className = "-my-2 ml-2 py-2 pl-2 font-semibold text-violet-300 dark:text-violet-700"; b.textContent = "Undo"; b.onmousedown = e => e.preventDefault(); b.onclick = () => { hide(); un() }; t.append(b) }
+      if (un) { const b = document.createElement("button"); b.className = "-my-2 ml-2 py-2 pl-2 font-semibold text-violet-600 dark:text-violet-400"; b.textContent = "Undo"; b.onmousedown = e => e.preventDefault(); b.onclick = () => { hide(); un() }; t.append(b) }
       t.classList.replace("opacity-0", "opacity-100"); clearTimeout(toast.t); toast.t = setTimeout(hide, un ? 5000 : 2200)
     }
     const undo = () => { if (!ed.readOnly && !ed.undo()) toast("There is no change to undo") }, redo = () => { if (!ed.readOnly && !ed.redo()) toast("There is no change to redo") };
@@ -634,23 +636,27 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
       const f = F[k]; if (!TAU || !f || !f.d) return Promise.resolve();
       return inv("list_dir", { dir: f.p }).then(v => { DL[f.p] = v; DE[f.p] = "" }, e => { DL[f.p] = []; DE[f.p] = String(e) }).then(() => { const n = $("#nl"); if (n && DK.matches) n.innerHTML = nlA(); if (OG === k && app.classList.contains("insw")) ovL() })
     }
+    // the dot before the tab name pulses while auto-save is waiting or writing (class sv, see the CSS)
+    const dB = new Set(); // tabs that are being written now
+    const dPulse = t => $("#tabs").children[S.tabs.indexOf(t)]?.firstElementChild?.classList.add("sv");
+    $("#tabs").addEventListener("animationend", e => e.target.classList.remove("sv")); // one soft blink per save; typing on keeps it going
     function dSave(t) {
       // A new tab is not a file yet: it has a temporary name only. Auto-save makes the file when the tab has text.
       // An empty new tab is never saved by itself (only Save, Ctrl+S, makes it a file). A file that exists is always saved, also when you empty it.
       const f = F[t.f]; if (!TAU || !f || !f.d || dMv.has(t)) return; // while moving, saving waits (the move saves after)
-      const nw = () => !t.fp && !t.t.trim(); clearTimeout(dW.get(t)); dW.delete(t); if (nw()) return; // text deleted again before the save: cancel it
-      dW.set(t, setTimeout(() => t.fp ? dWrite(t) : nw() ? dW.delete(t) : dCreate(t), 500))
+      const nw = () => !t.fp && !t.t.trim(); clearTimeout(dW.get(t)); dW.delete(t); if (nw()) return dPulse(t); // text deleted again before the save: cancel it
+      dW.set(t, setTimeout(() => t.fp ? dWrite(t) : nw() ? (dW.delete(t), dPulse(t)) : dCreate(t), 500)); dPulse(t)
     }
     function dWrite(t, force) {
       clearTimeout(dW.get(t)); dW.delete(t); const f = F[t.f];
       if (!t.fp || !f || !f.d || (t.b === "ro" || t.b === "lock" || (!force && (t.b === "changed" || t.b === "min")))) return Promise.resolve();
       // a failed save means rPad lost write access: lock the tab and offer a copy (the "lock" banner); the text stays in rPad
       // ds = the text that was written, not the text now: a change typed during the write stays unsaved, and its own timer saves it
-      const s = t.t;
+      const s = t.t; dB.add(t); dPulse(t);
       return inv("write_text", { dir: f.p, name: t.fp, text: dOut(t), createOnly: false, expect: force ? 0 : t.mt }).then(m => { t.mt = m; t.ds = s; if (t.b === "gone") t.b = null }, e => {
         t.b = e === "changed" ? "changed" : "lock"; // "changed": another app edited the file; the banner asks which version to keep
         if (t === cur()) show(); else toast(e === "changed" ? t.fp + " was changed by another app" : "Cannot save " + t.fp)
-      })
+      }).finally(() => { dB.delete(t) })
     }
     const dOut = t => t.le === "\r\n" ? t.t.replace(/\n/g, "\r\n") : t.t;
     // a new note in a disk folder becomes a file once it has text; its name is the one it already shows (or the date), made unique
@@ -666,7 +672,7 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
         show(); dScan(t.f); return !!t.fp
       } catch (e) { if (!q) toast("Cannot create the file"); return false }
       // The text changed while the file was being made (typed more, or cleared): the file now exists, so save the new text (also empty) the normal way
-      finally { dC.delete(t); if (t.fp && t.t !== t.ds) dSave(t) }
+      finally { dC.delete(t); dPulse(t); if (t.fp && t.t !== t.ds) dSave(t) }
     }
     // Make a copy (read-only, can't save, or deleted file): the tab becomes "<name> (copy)" in the same folder, editable.
     // The original file is not changed. If the folder can't be written either, the text goes to a new Scratchpad note.
@@ -1108,10 +1114,10 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
       dl: () => { const t = cur(); dlF(fileOf(t), t.t); toast(`rPad downloaded ${fileOf(t)}`) },
       // Save (Ctrl+S in the Windows app): a disk tab is written to its file now; a Scratchpad tab is stored inside rPad now (both also save by themselves)
       save: () => {
-        const t = cur(); if (!F[t.f].d) { flush(); return toast("The note is saved in rPad") }
+        const t = cur(); if (!F[t.f].d) { flush(); return toast("Auto-save is on. You do not need to press Ctrl+S.") }
         if (t.b === "ro" || t.b === "lock") return show(true); // the banner says why and offers a copy
         if (t.b === "changed" || t.b === "min") return toast("Another app changed this file. First, select the version to keep.");
-        (t.fp ? dWrite(t) : dCreate(t)).then(() => { if (t.fp && t.t === t.ds) toast(t.fp + " is saved") })
+        (t.fp ? dWrite(t) : dCreate(t)).then(() => { if (t.fp && t.t === t.ds) toast(`rPad saved ${t.fp}. Auto-save is on. You do not need to press Ctrl+S.`) })
       },
       dla: () => { const xs = S.tabs.filter(x => x.t.trim()); xs.forEach((x, k) => setTimeout(() => dlF(fileOf(x), x.t), k * 250)); toast(xs.length ? `rPad is downloading ${xs.length} file${xs.length === 1 ? "" : "s"}` : "No tab has text") },
       bk: () => { const n = `notepad-backup-${new Date().toISOString().slice(0, 10)}.json`; dlF(n, JSON.stringify({ app: "rough-notepad", v: 1, F, tabs: S.tabs, closed: S.closed }), "application/json"); toast(`rPad saved a backup of ${S.tabs.length} tabs to ${n}`) },
