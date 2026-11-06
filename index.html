@@ -139,7 +139,8 @@
       #sb .stg .text-\[13px\], #sb .stg .text-sm { font-size: 14px }
       /* narrow sidebar: compact rows, labels never wrap, size row wraps instead of clipping */
       #sb .stg [role=switch], #sb .stg .szr { padding-left: 10px; padding-right: 10px; gap: 8px }
-      #sb .stg [role=switch] > .flex-1, #sb .stg .szr > .flex-1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0 }
+      #sb .stg [role=switch] > .flex-1 { min-width: 0 }
+      #sb .stg .szr > .flex-1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0 }
       #sb .stg .szr { flex-wrap: wrap; row-gap: 6px }
       #sb .stg .szr > .flex-1 { flex-basis: 100% }
       #sb .stg .szr button { padding: 5px 10px }
@@ -342,7 +343,11 @@
     const FV = () => F.map((f, k) => [f, k]).filter(([f]) => !f.h);
     // once: the first folder's old default colour (blue) becomes the app's purple
     if (!S.pv) { if (F[0] && F[0].c === "blue") F[0].c = "purple"; S.pv = 1 }
-    S.tabs.forEach(x => { if (!F[x.f]) x.f = 0 }); S.cur = Math.min(Math.max(+S.cur || 0, 0), S.tabs.length - 1);
+    S.tabs.forEach(x => { if (!F[x.f]) x.f = 0 });
+    // Setting "Close all tabs at start": no tab is restored. A note with text goes to History (like a closed tab); a disk file is already in History from when it was opened.
+    if (S.ca) { S.tabs.forEach(x => { if (!x.fp) { const { m: _m, ...y } = x; S.closed.unshift({ ...y, d: "Just now" }) } }); S.tabs = [{ t: "", f: 0 }]; S.cur = 0 }
+    // Setting "Start with a new note": at start, open an empty Scratchpad note and show it
+    if (S.sn && !S.tabs.some(x => x.f === 0 && !x.fp && !x.t && !x.n)) { S.tabs.push({ t: "", f: 0 }); S.cur = S.tabs.length - 1 } S.cur = Math.min(Math.max(+S.cur || 0, 0), S.tabs.length - 1);
     S.closed = (S.closed || []).filter(x => F[x.f]);
     let kT = 0; const flush = () => { clearTimeout(kT); kT = 0; try { localStorage.setItem("sp-m1", JSON.stringify(S)) } catch (e) { } }, keep = () => { clearTimeout(kT); kT = setTimeout(flush, 500) };
     addEventListener("pagehide", () => kT && flush()); addEventListener("visibilitychange", () => kT && flush());
@@ -554,7 +559,7 @@ ${DV}${HD("Editor")}
 ${[["wrap", "Word wrap", S.wrap !== false], ["ln", "Line numbers", !!S.ln], ["spell", "Spell check", S.spell !== false]].map(tg).join("")}
 <div class="min-[600px]:hidden">${DV}${HD("Header")}${tg(["logo", `App icon<small class="${SM}">Show the logo at the left of the top row (phone only)</small>`, !!S.logo])}</div>
 ${DV}${HD("Files")}
-${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new files are called Untitled</small>`, S.ts !== false])}${tg(["ce", `Remove empty files<small class="${SM}">Unnamed files with no text are removed when closed and at start</small>`, S.ce !== false])}${DESK ? tg(["nt", `Show non-text files<small class="${SM}">Also list PDFs, images and other files in folders you open. You cannot edit them.</small>`, !!S.nt]) : ""}<div class="h-2"></div>`
+${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new files are called Untitled</small>`, S.ts !== false])}${tg(["ce", `Remove empty files<small class="${SM}">Unnamed files with no text are removed when closed and at start</small>`, S.ce !== false])}${DESK ? tg(["nt", `Show non-text files<small class="${SM}">Also list PDFs, images and other files in folders you open. You cannot edit them.</small>`, !!S.nt]) : ""}${tg(["ca", `Close all tabs when rPad closes<small class="${SM}">When rPad starts, no tabs are open. Notes with text go to History.</small>`, !!S.ca])}${tg(["sn", `Start with a new note<small class="${SM}">When rPad starts, open an empty note in Scratchpad. Your other tabs stay open.</small>`, !!S.sn])}<div class="h-2"></div>`
     }
     function setS() { sheet(`<h3 class="${H3}">Display settings</h3>${stgH()}`) }
     // Clean up: acts on the selection (line tools widen it to whole lines) or on the whole tab
@@ -603,7 +608,16 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
         let text; try { text = new TextDecoder("utf-8", { fatal: true }).decode(await TAU.fs.readFile(p)) } catch { throw "binary" }
         return { text, mtime: await dM(p) };
       },
-      write_text: async ({ dir, name, text, createOnly }) => { const p = await dP(dir, name); if (createOnly && await TAU.fs.exists(p)) throw "exists"; await TAU.fs.writeTextFile(p, text); return dM(p) },
+      // createOnly: never replace a file. expect: the modified time we last saw; if the file has another time now, another app changed it, so throw "changed".
+      // An existing file is replaced in one step (temp file, then rename), so a crash while writing cannot leave half a file. The temp name starts with "." (the list hides it).
+      write_text: async ({ dir, name, text, createOnly, expect }) => {
+        const p = await dP(dir, name), has = await TAU.fs.exists(p); if (createOnly && has) throw "exists";
+        if (!has) { await TAU.fs.writeTextFile(p, text); return dM(p) }
+        if (expect && await dM(p) !== expect) throw "changed";
+        const tmp = await dP(dir, "." + name + ".rpad-tmp");
+        try { await TAU.fs.writeTextFile(tmp, text); await TAU.fs.rename(tmp, p) } catch (e) { await TAU.fs.remove(tmp).catch(() => 0); throw e }
+        return dM(p)
+      },
       rename_file: async ({ dir, from, to }) => {
         const a = await dP(dir, from), b = await dP(dir, to); if (a.toLowerCase() !== b.toLowerCase() && await TAU.fs.exists(b)) throw "exists";
         await TAU.fs.rename(a, b); return dM(b)
@@ -633,7 +647,10 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
       // a failed save means rPad lost write access: lock the tab and offer a copy (the "lock" banner); the text stays in rPad
       // ds = the text that was written, not the text now: a change typed during the write stays unsaved, and its own timer saves it
       const s = t.t;
-      return inv("write_text", { dir: f.p, name: t.fp, text: dOut(t), createOnly: false }).then(m => { t.mt = m; t.ds = s; if (t.b === "gone") t.b = null }, () => { t.b = "lock"; if (t === cur()) show(); else toast("Cannot save " + t.fp) })
+      return inv("write_text", { dir: f.p, name: t.fp, text: dOut(t), createOnly: false, expect: force ? 0 : t.mt }).then(m => { t.mt = m; t.ds = s; if (t.b === "gone") t.b = null }, e => {
+        t.b = e === "changed" ? "changed" : "lock"; // "changed": another app edited the file; the banner asks which version to keep
+        if (t === cur()) show(); else toast(e === "changed" ? t.fp + " was changed by another app" : "Cannot save " + t.fp)
+      })
     }
     const dOut = t => t.le === "\r\n" ? t.t.replace(/\n/g, "\r\n") : t.t;
     // a new note in a disk folder becomes a file once it has text; its name is the one it already shows (or the date), made unique
@@ -733,7 +750,7 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
     function dOpen(k, name) {
       const i = S.tabs.findIndex(x => x.f === k && x.fp === name); if (i >= 0) { setH("#note-" + tid(S.tabs[i])); return render() }
       const t = { t: "", f: k, fp: name }; [t.n, t.x] = splitN(name);
-      dRead(t).then(() => { S.tabs.push(t); setH("#note-" + tid(t)); render() }, dErr)
+      dRead(t).then(() => { S.tabs.push(t); toRecent(t); setH("#note-" + tid(t)); render() }, dErr)
     }
     // the window got focus: pick up files added, removed or edited by other apps
     let dBusy = 0;
@@ -811,15 +828,17 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
       dWrite(t).then(() => inv("rename_file", { dir: f.p, from: t.fp, to: nm })).then(m => { t.fp = nm; t.mt = m; dScan(t.f); show() }, e => { [t.n, t.x] = o; show(); toast(e === "exists" ? "A file with this name is already in the folder" : "Cannot rename the file") })
     }
     const afterTabs = () => app.classList.contains("insw") ? (show(true), ovS()) : show(true);
-    // Desktop: every closed file is also written to the History file (history.json in the app data folder, an array; each path is split into its parts) with its full path.
+    // History is built when a file is opened (like "Open Recent" in VS Code), not when it is closed. A note typed in rPad has no file, so it goes to History when it is closed.
+    // Desktop: each entry is also written to the History file (history.json in the app data folder, an array; each path is split into its parts) with its full path.
     // A file from a disk folder has its real path. A note typed in rPad has no file, so its path starts with "rPad".
     // History panel: a note keeps its text; a disk file keeps only its place (folder + file name) and is read from the disk again on reopen
-    const toClosed = x => { if (!keepX(x)) return; if (x.fp) { const { t: _, ...r } = x; S.closed = S.closed.filter(y => !(y.f === x.f && y.fp === x.fp)); S.closed.unshift({ ...r, t: "", d: "Just now", c: Date.now() }) } else S.closed.unshift({ ...x, d: "Just now", c: Date.now() }) };
     const fullP = x => { const f = F[x.f]; return x.fp && f.p ? f.p + "\\" + x.fp : "rPad\\" + f.n + "\\" + fileOf(x) };
-    const logC = x => { if (!DESK || !keepX(x)) return; TAU.logClosed(fullP(x).split(/[\\/]+/).filter(Boolean)) };
+    const logP = x => { if (DESK) TAU.logClosed(fullP(x).split(/[\\/]+/).filter(Boolean)) };
+    const toRecent = x => { const r = { f: x.f, fp: x.fp, n: x.n, x: x.x, t: "", d: "Just now" }; S.closed = S.closed.filter(y => !(y.f === r.f && y.fp === r.fp)); S.closed.unshift(r); logP(x) };
+    const toClosed = x => { if (x.fp || !keepX(x)) return; const { m: _m, ...y } = x; S.closed.unshift({ ...y, d: "Just now" }); logP(x) };
     function closeT(i) {
       // the file stays in its folder (as a closed tab); an empty file you never named is discarded
-      const x = S.tabs[i], nm = fileOf(x), fo = F[x.f].n, kp = keepX(x); logC(x); S.tabs.splice(i, 1); toClosed(x);
+      const x = S.tabs[i], nm = fileOf(x), fo = F[x.f].n, kp = keepX(x); S.tabs.splice(i, 1); toClosed(x);
       if (!S.tabs.length) S.tabs.push({ t: "", f: 0 }); if (i <= S.cur && S.cur > 0) S.cur--;
       close(); afterTabs(); if (kp) toast(`The tab is closed. ${nm} stays in ${fo}.`)
     }
@@ -835,7 +854,7 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
       close(); afterTabs(); toast(`${nm} is deleted`, () => { S.tabs.splice(i, 0, x); S.cur = c; afterTabs() })
     }
     function closeMany(keepIdx) {
-      const k = S.tabs[keepIdx]; S.tabs.forEach(x => { if (x !== k) { logC(x); toClosed(x) } });
+      const k = S.tabs[keepIdx]; S.tabs.forEach(x => { if (x !== k) toClosed(x) });
       S.tabs = k ? [k] : [{ t: "", f: 0 }]; S.cur = 0; close(); afterTabs(); toast(k ? "The other tabs are closed" : "All tabs are closed")
     }
     function tabS(i) {
@@ -876,7 +895,7 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
       const b = e.target.closest("[data-a]"); if (!b) { if (e.target.id === "sh") close(); return }
       const a = b.dataset.a, i = +b.dataset.i, v = b.dataset.v, t = cur();
       const A = {
-        tab: () => { S.cur = i; show(true); dChk(cur()) }, new: () => newNote(i), nta: ntAsk, hist: histS, hclr: () => { if (b.dataset.ok !== "1") { b.dataset.ok = "1"; b.textContent = "Tap again to clear all"; return } S.closed = []; shOpen() ? (keep(), histS()) : show() }, hdel: () => { S.closed.splice(i, 1); shOpen() ? (keep(), histS()) : show() }, hopen: () => { const { d: _, c: _c, ...d } = S.closed.splice(i, 1)[0]; if (d.fp) { close(); return dOpen(d.f, d.fp) } S.tabs.push(d); close(); setH("#note-" + tid(d)); render() }, grid: () => go("#tabs"), ws: () => wsS(b), menu: () => { if (!DK.matches) return menuS(); const r = b.getBoundingClientRect(); setTimeout(() => cxOpen(S.cur, r.right - 190, r.bottom + 2)) }, tcu: () => { S.cur = i; show(true); cuS() }, ecopy: () => navigator.clipboard.writeText(ed.selText()).then(() => toast("The text is copied"), () => toast("Cannot copy the text")),
+        tab: () => { S.cur = i; show(true); dChk(cur()) }, new: () => newNote(i), nta: ntAsk, hist: histS, hclr: () => { if (b.dataset.ok !== "1") { b.dataset.ok = "1"; b.textContent = "Tap again to clear all"; return } S.closed = []; shOpen() ? (keep(), histS()) : show() }, hdel: () => { S.closed.splice(i, 1); shOpen() ? (keep(), histS()) : show() }, hopen: () => { const { d: _, ...d } = S.closed.splice(i, 1)[0]; if (d.fp) { close(); return dOpen(d.f, d.fp) } S.tabs.push(d); close(); setH("#note-" + tid(d)); render() }, grid: () => go("#tabs"), ws: () => wsS(b), menu: () => { if (!DK.matches) return menuS(); const r = b.getBoundingClientRect(); setTimeout(() => cxOpen(S.cur, r.right - 190, r.bottom + 2)) }, tcu: () => { S.cur = i; show(true); cuS() }, ecopy: () => navigator.clipboard.writeText(ed.selText()).then(() => toast("The text is copied"), () => toast("Cannot copy the text")),
         ecut: () => { const x = ed.selText(); navigator.clipboard.writeText(x).then(() => ed.replaceSel(""), () => toast("Cannot cut the text")) },
         epaste: () => navigator.clipboard.readText().then(x => x && ed.replaceSel(x), () => toast("Cannot read the clipboard")), set: () => { if (DK.matches) { S.sbh = 0; S.sp = "g"; app.classList.remove("sbh"); show() } else setS() }, find: fnd, fp: () => step(-1), fn: () => step(1),
         rpt: () => { const r = $("#rp"); r.style.display = r.style.display === "flex" ? "none" : "flex"; if (r.style.display === "flex") $("#ri").focus() },
@@ -919,7 +938,7 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
         ovx: () => closeT(i),
         nt: () => { if (!F[i].ok) return toast(`${F[i].n} is not connected`); add(i) },
         top: () => { S.top = !S.top; applyTop(); keep() },
-        fs: () => { PF = Math.max(6, Math.min(24, (PF ?? S.fs) + +b.dataset.d)); const on = PF !== S.fs; document.querySelectorAll(".pfv").forEach(e => e.textContent = PF); document.querySelectorAll("[data-a=fsa]").forEach(e => { e.disabled = !on; e.classList.toggle("opacity-40", !on); e.classList.toggle("!bg-violet-600", on); e.classList.toggle("!text-white", on) }) }, fsa: () => { S.fs = PF; PF = null; rf() }, tg: () => { if (v === "wrap") S.wrap = S.wrap === false; else if (v === "ts") S.ts = S.ts === false; else if (v === "spell") S.spell = S.spell === false; else if (v === "ce") S.ce = S.ce === false; else if (v === "nt") S.nt = !S.nt; else if (v === "pin") TAU.pin(S.pin = !S.pin); else if (v === "logo") { S.logo = !S.logo; applyTop() } else S.ln = !S.ln; show(); if (shOpen()) setS() }, pal: () => { S.pal = v; theme(); show(); if (shOpen()) setS() }, th: () => { S.theme = v; theme(); show(); if (shOpen()) setS() }, ff: () => { S.font = v; show(); if (shOpen()) setS() },
+        fs: () => { PF = Math.max(6, Math.min(24, (PF ?? S.fs) + +b.dataset.d)); const on = PF !== S.fs; document.querySelectorAll(".pfv").forEach(e => e.textContent = PF); document.querySelectorAll("[data-a=fsa]").forEach(e => { e.disabled = !on; e.classList.toggle("opacity-40", !on); e.classList.toggle("!bg-violet-600", on); e.classList.toggle("!text-white", on) }) }, fsa: () => { S.fs = PF; PF = null; rf() }, tg: () => { if (v === "wrap") S.wrap = S.wrap === false; else if (v === "ts") S.ts = S.ts === false; else if (v === "spell") S.spell = S.spell === false; else if (v === "ce") S.ce = S.ce === false; else if (v === "nt") S.nt = !S.nt; else if (v === "sn") S.sn = !S.sn; else if (v === "ca") S.ca = !S.ca; else if (v === "pin") TAU.pin(S.pin = !S.pin); else if (v === "logo") { S.logo = !S.logo; applyTop() } else S.ln = !S.ln; show(); if (shOpen()) setS() }, pal: () => { S.pal = v; theme(); show(); if (shOpen()) setS() }, th: () => { S.theme = v; theme(); show(); if (shOpen()) setS() }, ff: () => { S.font = v; show(); if (shOpen()) setS() },
         thc: () => { S.theme = { auto: "light", light: "dark", dark: "auto" }[S.theme] || "auto"; theme(); show() },
         ap: () => { if (app.classList.contains("insw")) { swv(false); S.sbh = 1 } if (!S.sbh && (S.sp || "e") === v) S.sbh = 1; else { S.sbh = 0; S.sp = v } app.classList.toggle("sbh", !!S.sbh); show(); if (!S.sbh && v === "s") $("#sq").focus() },
         sf: () => { SF = i; SFO = 0; SSM = 0; show(); dScan(i) }, sfm: () => { SFO = !SFO; SSM = 0; show() }, ssm: () => { SSM = !SSM; SFO = 0; show() }, ss: () => { S.so = v; SSM = 0; keep(); show() }, fx: () => { const c = S.fc || (S.fc = []), k = c.indexOf(i); k < 0 ? c.push(i) : c.splice(k, 1); show() },
@@ -1016,6 +1035,7 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
       return (xs.map(([x, i]) => fRow(x, i)).join("") || (cs.length ? "" : `<div class="px-3 py-2 text-slate-500 dark:text-slate-400">${q ? "No matches." : "No notes here yet."}</div>`)) +
         (cs.length ? `<div class="px-3 pb-1 pt-4 text-[11px] font-medium text-slate-400">Recently closed</div>` + cs.map(([x, i]) => `<div class="group/r relative rounded-md hover:bg-slate-500/5"><button data-a="hopen" data-i="${i}" title="Closed. Click to reopen." class="flex h-8 w-full min-w-0 items-center gap-2.5 px-3 pr-8 text-left text-slate-500 dark:text-slate-400"><span class="text-slate-400">${ic("doc", "size-4 stroke-2")}</span><span class="truncate">${esc(D(x))}</span></button><button data-a="hdel" data-i="${i}" aria-label="Delete file" title="Delete file" class="${SBB} absolute right-1.5 top-1 hidden group-hover/r:grid">${ic("x", "size-3.5 stroke-2")}</button></div>`).join("") : "")
     }
+    let SBP = ""; // the sidebar panel shown last
     function sbR() {
       const p = S.sp || "e", h = (l, x = "") => `<div class="flex h-12 shrink-0 items-center gap-1 pl-3 pr-3.5 text-[15px] font-semibold text-slate-800 dark:text-slate-100">${l}<div class="flex-1"></div>${x}</div>`, L = s => `<div class="min-h-0 flex-1 overflow-y-auto px-1.5 pb-3">${s}</div>`;
       let o;
@@ -1038,9 +1058,12 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
         o = h("Starred") + L(xs.length ? xs.map(([x, i]) => fRow(x, i)).join("") : `<div class="px-2 py-1 text-slate-500 dark:text-slate-400">No starred tabs yet. Use the star in the menu to star a tab.</div>`)
       } else {
         o = `<div class="flex shrink-0 items-center gap-0.5 px-2 pb-2 pt-3"><div class="flex h-8 min-w-0 flex-1 items-center gap-2 px-2 text-[13px]">${ic("doc", "size-4 shrink-0 stroke-2 text-slate-400")}<span class="min-w-0 flex-1 truncate font-medium">Closed files</span></div>${S.closed.length ? `<button data-a="hclr" class="h-8 shrink-0 rounded-md px-2 text-[13px] text-red-600 hover:bg-slate-500/10 dark:text-red-400">Clear all</button>` : ""}</div>` +
-          L(`<div id="hl">` + (S.closed.length ? S.closed.map((x, i) => !x.t.trim() && !x.fp ? "" : `<div class="group/r relative rounded-md hover:bg-slate-500/5"><button data-a="hopen" data-i="${i}" title="${esc(fullP(x))}. Click to reopen." class="flex w-full min-w-0 items-center gap-2.5 px-3 py-1 pr-8 text-left"><span class="ni ${tx(F[x.f])}">${ic("doc", "size-4 stroke-2")}</span><span class="min-w-0 flex-1"><span class="block truncate">${esc(D(x))}</span><span class="block truncate text-[11px] text-slate-500 dark:text-slate-400">${x.c ? ago(x.c) : "Earlier"}</span></span></button><button data-a="hdel" data-i="${i}" aria-label="Remove from History" title="Remove from History" class="${SBB} absolute right-1.5 top-1 hidden group-hover/r:grid">${ic("x", "size-3.5 stroke-2")}</button></div>`).join("") : `<div class="px-3 py-2 text-slate-500 dark:text-slate-400">No closed tabs yet.</div>`) + `</div>`)
+          L(`<div id="hl">` + (S.closed.length ? S.closed.map((x, i) => !x.t.trim() && !x.fp ? "" : `<div class="group/r relative rounded-md hover:bg-slate-500/5"><button data-a="hopen" data-i="${i}" title="${esc(fullP(x))}. Click to reopen." class="flex w-full min-w-0 items-center gap-2.5 px-3 py-1 pr-8 text-left"><span class="ni ${tx(F[x.f])}">${ic("doc", "size-4 stroke-2")}</span><span class="min-w-0 flex-1"><span class="block truncate">${esc(D(x))}</span></span></button><button data-a="hdel" data-i="${i}" aria-label="Remove from History" title="Remove from History" class="${SBB} absolute right-1.5 top-1 hidden group-hover/r:grid">${ic("x", "size-3.5 stroke-2")}</button></div>`).join("") : `<div class="px-3 py-2 text-slate-500 dark:text-slate-400">No closed tabs yet.</div>`) + `</div>`)
       }
+      // the panel is rebuilt: keep the scroll position when the same panel is shown again (for example after a toggle in Settings)
+      const sc = $("#sbc > .overflow-y-auto"), top = sc && SBP === p ? sc.scrollTop : 0; SBP = p;
       $("#sbc").innerHTML = o;
+      const sn = $("#sbc > .overflow-y-auto"); if (sn && top) sn.scrollTop = top;
       if (p === "e") $("#nq").oninput = e => { NQ = e.target.value; $("#nl").innerHTML = nlR() };
       if (p === "s") { $("#sq").oninput = e => { SQ = e.target.value; srR() }; srR() }
     }
