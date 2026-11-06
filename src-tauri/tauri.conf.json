@@ -5,11 +5,10 @@
   "identifier": "app.rpad.desktop",
   "build": {
     "beforeBuildCommand": "npm run build:desktop",
-    "beforeDevCommand": "npm run build:desktop",
+    "beforeDevCommand": { "script": "npm run build:desktop -- --watch", "wait": false },
     "frontendDist": "../dist"
   },
   "app": {
-    "withGlobalTauri": false,
     "windows": [
       {
         "label": "main",
@@ -25,7 +24,7 @@
     ],
     "security": {
       "dangerousDisableAssetCspModification": ["style-src"],
-      "csp": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self'"
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' ipc: http://ipc.localhost; object-src 'none'; base-uri 'none'; frame-src 'none'; form-action 'none'"
     }
   },
   "bundle": {
