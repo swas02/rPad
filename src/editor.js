@@ -2,7 +2,7 @@
 // selection and scroll. Undo/redo, find/replace and the keymap come from CodeMirror's own packages.
 // The page talks to this through create(); it never touches CodeMirror directly.
 import { EditorState, Compartment, EditorSelection } from "@codemirror/state";
-import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter, placeholder } from "@codemirror/view";
+import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap, isolateHistory, undo, redo, selectAll } from "@codemirror/commands";
 import { search, SearchQuery, setSearchQuery, getSearchQuery, findNext, findPrevious, replaceNext, replaceAll, openSearchPanel, closeSearchPanel, searchPanelOpen } from "@codemirror/search";
 import * as T from "./textops.js";
@@ -22,10 +22,10 @@ function diff(at, from, to) {
 // onFind({on, count, index, more}) when the find counter changes.
 export function create({ parent, onText, onSelect, onFind }) {
   // settings that can change while the app runs live in Compartments; `cfg` holds the current values
-  const C = { wrap: new Compartment, ln: new Compartment, ro: new Compartment, attrs: new Compartment, ph: new Compartment };
-  const cfg = { wrap: true, ln: false, ro: false, sp: true, ac: "on", ph: "" };
+  const C = { wrap: new Compartment, ln: new Compartment, ro: new Compartment, attrs: new Compartment };
+  const cfg = { wrap: true, ln: false, ro: false, sp: true, ac: "on" };
   const parts = () => ({
-    wrap: cfg.wrap ? EditorView.lineWrapping : [], ln: cfg.ln ? lineNumbers() : [], ro: EditorState.readOnly.of(cfg.ro), ph: placeholder(cfg.ph),
+    wrap: cfg.wrap ? EditorView.lineWrapping : [], ln: cfg.ln ? lineNumbers() : [], ro: EditorState.readOnly.of(cfg.ro),
     attrs: EditorView.contentAttributes.of({ spellcheck: String(cfg.sp), autocorrect: cfg.ac, autocapitalize: cfg.ac === "on" ? "sentences" : "off", "aria-label": "Note" })
   });
   let ver = 0; // bumped on every settings change; a saved state with an older number gets the new settings when its tab opens
@@ -144,6 +144,8 @@ export function create({ parent, onText, onSelect, onFind }) {
     dom: view.contentDOM, find,
     get length() { return view.state.doc.length },
     get readOnly() { return cfg.ro },
+    // run a layout read/write pair in CodeMirror's measure phase (never read layout inside an update)
+    measure: (read, write) => view.requestMeasure({ read, write }),
     hasFocus: () => view.hasFocus, focus: () => view.focus(), blur: () => view.contentDOM.blur(),
     text: () => view.state.doc.toString(), flush,
 
@@ -151,9 +153,9 @@ export function create({ parent, onText, onSelect, onFind }) {
     // if the page changed the text behind the editor's back, the tab starts afresh.
     open(tabId, text) {
       flush();
-      if (tabId === id) { if (view.state.doc.toString() === text) return; states.delete(id) }
+      if (tabId === id) { const d = view.state.doc; if (d.length === text.length && d.toString() === text) return; states.delete(id) }
       else if (id != null) { states.set(id, view.state); snaps.set(id, view.scrollSnapshot()) }
-      let s = states.get(tabId); if (s && s.doc.toString() !== text) { s = null; snaps.delete(tabId) }
+      let s = states.get(tabId); if (s && (s.doc.length !== text.length || s.doc.toString() !== text)) { s = null; snaps.delete(tabId) }
       if (!s) { s = state(text); vers.set(tabId, ver) }
       id = tabId; view.setState(s);
       if (vers.get(id) !== ver) { view.dispatch({ effects: Object.keys(C).map(k => C[k].reconfigure(parts()[k])) }); vers.set(id, ver) }
@@ -163,10 +165,10 @@ export function create({ parent, onText, onSelect, onFind }) {
     // forget the saved states of tabs that are no longer open
     keepOnly(ids) { for (const k of [...states.keys()]) if (!ids.has(k)) { states.delete(k); snaps.delete(k); vers.delete(k) } },
 
-    // p: any of { wrap, ln, readOnly, spellcheck, autocorrect, placeholder }
+    // p: any of { wrap, ln, readOnly, spellcheck, autocorrect }
     set(p) {
       const k = new Set(), put = (key, name, v) => { if (v !== undefined && v !== cfg[key]) { cfg[key] = v; k.add(name) } };
-      put("wrap", "wrap", p.wrap); put("ln", "ln", p.ln); put("ro", "ro", p.readOnly); put("sp", "attrs", p.spellcheck); put("ac", "attrs", p.autocorrect); put("ph", "ph", p.placeholder);
+      put("wrap", "wrap", p.wrap); put("ln", "ln", p.ln); put("ro", "ro", p.readOnly); put("sp", "attrs", p.spellcheck); put("ac", "attrs", p.autocorrect);
       if (!k.size) return; ver++; if (id != null) vers.set(id, ver);
       view.dispatch({ effects: [...k].map(n => C[n].reconfigure(parts()[n])) })
     },
@@ -176,6 +178,12 @@ export function create({ parent, onText, onSelect, onFind }) {
     remeasure() { view.dispatch({ effects: C.wrap.reconfigure(cfg.wrap ? [] : EditorView.lineWrapping) }); requestAnimationFrame(() => view.dispatch({ effects: C.wrap.reconfigure(parts().wrap) })) },
     undo: () => undo(view), redo: () => redo(view),
     selectAll() { view.focus(); selectAll(view) },
+    // the selected text ("" when nothing is selected); replaceSel puts text over the selection or at the cursor, as one undo step
+    selText() { const r = sel(); return doc().sliceString(r.from, r.to) },
+    replaceSel(t) {
+      if (cfg.ro) return false; view.focus();
+      view.dispatch(view.state.changeByRange(r => ({ changes: { from: r.from, to: r.to, insert: t }, range: EditorSelection.cursor(r.from + t.length) })), { scrollIntoView: true, userEvent: t ? "input.paste" : "delete.cut" }); return true
+    },
     select: show,
     // { from, to, ln, col } for the status bar
     sel() { const r = sel(), l = doc().lineAt(r.to); return { from: r.from, to: r.to, ln: l.number, col: r.to - l.from + 1 } },
