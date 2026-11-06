@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "No plugins or extra IPC: the app is a self-contained page.",
+  "windows": ["main"],
+  "permissions": []
+}
