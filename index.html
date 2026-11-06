@@ -1114,8 +1114,8 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
     };
     // menu items: [label, attributes, shortcut, checked, disabled] or "-" for a divider. Menus, grouped by task: File (create, open, save, close), Tab (the current tab), Edit, View, Export, Preferences, Help
     const MN = {
-      File: () => [["New note…", 'data-a="nta"', "Ctrl+N"], ["New scratch note", 'data-a="nt" data-i="0"', "Ctrl+Shift+N"], ["New folder…", 'data-a="nf"'], ["Paste as new tab", 'data-a="pnew"'], "-",
-        ["Open file…", 'data-a="mb" data-v="open"', "Ctrl+O"], ["Reopen closed tab", 'data-a="hopen" data-i="0"', "", 0, !S.closed.length], "-",
+      File: () => [["New note…", 'data-a="nta"', "Ctrl+N"], ["New scratch note", 'data-a="nt" data-i="0"', "Ctrl+Shift+N"], ["Paste as new tab", 'data-a="pnew"'], ...(DESK ? [] : [["New folder…", 'data-a="nf"']]), "-",
+        ["Open file…", 'data-a="mb" data-v="open"', "Ctrl+O"], ...(DESK ? [["Open folder…", 'data-a="nf"']] : []), ["Reopen closed tab", 'data-a="hopen" data-i="0"', "", 0, !S.closed.length], "-",
         ...(DESK ? [["Save", 'data-a="mb" data-v="save"', "Ctrl+S"], "-"] : []),
         ["Close tab", `data-a="tcl" data-i="${S.cur}"`], ["Close other tabs", `data-a="tco" data-i="${S.cur}"`, "", 0, S.tabs.length < 2]],
       Tab: () => [["Rename…", 'data-a="mb" data-v="ren"', "F2"], ["Move to folder…", `data-a="tmv" data-i="${S.cur}"`], ["Duplicate tab", `data-a="tdup" data-i="${S.cur}"`], [cur().s ? "Unstar" : "Star", 'data-a="star"'], "-",
@@ -1130,8 +1130,9 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
         ["Word wrap", 'data-a="tg" data-v="wrap"', "Alt+Z", S.wrap !== false], ["Line numbers", 'data-a="tg" data-v="ln"', "", !!S.ln], "-",
         ["Bigger text", 'data-a="mb" data-v="zi"', "Ctrl+="], ["Smaller text", 'data-a="mb" data-v="zo"', "Ctrl+−"],
         ...(DESK ? ["-", ["Keep on top", 'data-a="tg" data-v="pin"', "", !!S.pin]] : [])],
-      Export: () => [["Download", 'data-a="dl"', DESK ? "" : "Ctrl+S"], ["Download all tabs", 'data-a="mb" data-v="dla"'], ["Share…", 'data-a="share"'], "-",
-        ["Back up everything (.json)", 'data-a="mb" data-v="bk"'], ["Restore from backup…", 'data-a="mb" data-v="rs"']],
+      Export: () => [["Download", 'data-a="dl"', DESK ? "" : "Ctrl+S"], ["Download all tabs", 'data-a="mb" data-v="dla"'], ["Share…", 'data-a="share"'],
+        // backup is for notes kept in the browser; on desktop the notes are real files, so the backup is hidden
+        ...(DESK ? [] : ["-", ["Back up everything (.json)", 'data-a="mb" data-v="bk"'], ["Restore from backup…", 'data-a="mb" data-v="rs"']])],
       Preferences: () => [["Monospace font", 'data-a="ff" data-v="mono"', "", (S.font || "mono") === "mono"], ["Sans font", 'data-a="ff" data-v="sans"', "", S.font === "sans"], "-",
         ...["auto", "light", "dark"].map(k => [`Theme: ${k[0].toUpperCase() + k.slice(1)}`, `data-a="th" data-v="${k}"`, "", S.theme === k]), "-",
         ["Spell check", 'data-a="tg" data-v="spell"', "", S.spell !== false], ["Remove empty files", 'data-a="tg" data-v="ce"', "", S.ce !== false], "-",
@@ -1141,8 +1142,9 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
     const SA = matchMedia("(display-mode: standalone)"); DK.addEventListener("change", theme);
     const MBT = "rounded px-2 py-0.5 hover:bg-slate-200 aria-expanded:bg-slate-200 dark:hover:bg-slate-800 dark:aria-expanded:bg-slate-800",
       MNU = "rounded-lg border border-slate-200 bg-white p-1 text-[13px] shadow-lg dark:border-slate-700 dark:bg-slate-800";
-    const it = x => x === "-" ? `<div class="my-1 border-t border-slate-200 dark:border-slate-700"></div>` :
-      `<button ${x[1]} role="menuitem" ${x[4] ? "disabled" : ""} class="flex h-7 w-full items-center gap-2 rounded px-2 text-left hover:bg-violet-600 hover:text-white disabled:pointer-events-none disabled:opacity-40 ${x[5] || ""}"><span class="w-4">${x[3] ? ic("chk", "size-3.5 stroke-[2.5]") : ""}</span><span class="flex-1 whitespace-nowrap">${x[0]}</span><span class="pl-8 text-[12px] opacity-60">${x[2] || ""}</span></button>`;
+    // the check column shows only in a menu that has a checked item (map passes the whole list as the 3rd argument)
+    const it = (x, k, a) => x === "-" ? `<div class="my-1 border-t border-slate-200 dark:border-slate-700"></div>` :
+      `<button ${x[1]} role="menuitem" ${x[4] ? "disabled" : ""} class="flex h-7 w-full items-center gap-2 rounded px-2 text-left hover:bg-violet-600 hover:text-white disabled:pointer-events-none disabled:opacity-40 ${x[5] || ""}">${a?.some(y => typeof y[3] === "boolean") ? `<span class="w-4">${x[3] ? ic("chk", "size-3.5 stroke-[2.5]") : ""}</span>` : ""}<span class="flex-1 whitespace-nowrap">${x[0]}</span><span class="pl-8 text-[12px] opacity-60">${x[2] || ""}</span></button>`;
     // top-right icons: Folders and Starred switch the sidebar panel, the same as View > Explorer and Starred; the card page (All tabs, Folders, Starred) is only for the phone layout
     const SPN = { g: "e", s: "b" };
     function mbR() {
