@@ -632,7 +632,7 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
     const dTabs = k => S.tabs.some(x => x.f === k && x.fp);
     function dScan(k) {
       const f = F[k]; if (!TAU || !f || !f.d) return Promise.resolve();
-      return inv("list_dir", { dir: f.p }).then(v => { DL[f.p] = v; DE[f.p] = "" }, e => { DL[f.p] = []; DE[f.p] = String(e) }).then(() => { const n = $("#nl"); if (n && DK.matches) n.innerHTML = nlR(); if (OG === k && app.classList.contains("insw")) ovL() })
+      return inv("list_dir", { dir: f.p }).then(v => { DL[f.p] = v; DE[f.p] = "" }, e => { DL[f.p] = []; DE[f.p] = String(e) }).then(() => { const n = $("#nl"); if (n && DK.matches) n.innerHTML = nlA(); if (OG === k && app.classList.contains("insw")) ovL() })
     }
     function dSave(t) {
       // A new tab is not a file yet: it has a temporary name only. Auto-save makes the file when the tab has text.
@@ -757,7 +757,7 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
     async function dSync() {
       if (!TAU || dBusy) return; dBusy = 1;
       try {
-        const ks = F.map((f, k) => k).filter(k => F[k].d && (k === SF || dTabs(k))); for (const k of ks) await dScan(k);
+        const ks = F.map((f, k) => k).filter(k => F[k].d && (SX.has(k) || dTabs(k))); for (const k of ks) await dScan(k);
         for (const t of S.tabs) await dChk(t, 1);
         show(true)
       } finally { dBusy = 0 }
@@ -797,7 +797,7 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
       inv("pick_folder").then(p => {
         if (!p) return; const k = dFolder(p);
         if (mv) dMove(cur(), k);
-        SF = k; S.sbh = 0; S.sp = "e"; app.classList.remove("sbh"); close(); keep(); show(); dScan(k)
+        SF = k; SX.add(k); S.sbh = 0; S.sp = "e"; app.classList.remove("sbh"); close(); keep(); show(); dScan(k)
       }, () => toast("Cannot open the folder dialog"))
     }
     // Open file: the file opens in place (edits save to the same file). Its folder joins the Library, like Open folder.
@@ -941,7 +941,7 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
         fs: () => { PF = Math.max(6, Math.min(24, (PF ?? S.fs) + +b.dataset.d)); const on = PF !== S.fs; document.querySelectorAll(".pfv").forEach(e => e.textContent = PF); document.querySelectorAll("[data-a=fsa]").forEach(e => { e.disabled = !on; e.classList.toggle("opacity-40", !on); e.classList.toggle("!bg-violet-600", on); e.classList.toggle("!text-white", on) }) }, fsa: () => { S.fs = PF; PF = null; rf() }, tg: () => { if (v === "wrap") S.wrap = S.wrap === false; else if (v === "ts") S.ts = S.ts === false; else if (v === "spell") S.spell = S.spell === false; else if (v === "ce") S.ce = S.ce === false; else if (v === "nt") S.nt = !S.nt; else if (v === "sn") S.sn = !S.sn; else if (v === "ca") S.ca = !S.ca; else if (v === "pin") TAU.pin(S.pin = !S.pin); else if (v === "logo") { S.logo = !S.logo; applyTop() } else S.ln = !S.ln; show(); if (shOpen()) setS() }, pal: () => { S.pal = v; theme(); show(); if (shOpen()) setS() }, th: () => { S.theme = v; theme(); show(); if (shOpen()) setS() }, ff: () => { S.font = v; show(); if (shOpen()) setS() },
         thc: () => { S.theme = { auto: "light", light: "dark", dark: "auto" }[S.theme] || "auto"; theme(); show() },
         ap: () => { if (app.classList.contains("insw")) { swv(false); S.sbh = 1 } if (!S.sbh && (S.sp || "e") === v) S.sbh = 1; else { S.sbh = 0; S.sp = v } app.classList.toggle("sbh", !!S.sbh); show(); if (!S.sbh && v === "s") $("#sq").focus() },
-        sf: () => { SF = i; SFO = 0; SSM = 0; show(); dScan(i) }, sfm: () => { SFO = !SFO; SSM = 0; show() }, ssm: () => { SSM = !SSM; SFO = 0; show() }, ss: () => { S.so = v; SSM = 0; keep(); show() }, fx: () => { const c = S.fc || (S.fc = []), k = c.indexOf(i); k < 0 ? c.push(i) : c.splice(k, 1); show() },
+        sf: () => { SF = i; SSM = 0; SX.has(i) ? SX.delete(i) : SX.add(i); show(); if (SX.has(i) && i >= 0) dScan(i) }, sfm: () => { SFO = !SFO; SSM = 0; show() }, ssm: () => { SSM = !SSM; SFO = 0; show() }, ss: () => { S.so = v; SSM = 0; keep(); show() }, fx: () => { const c = S.fc || (S.fc = []), k = c.indexOf(i); k < 0 ? c.push(i) : c.splice(k, 1); show() },
         so: () => sOpen(i, +v), mb: () => MBA[v](i), mo: () => mbOpen(v), hb: () => { HB = v || (HB ? "" : "/"); hbR() },
         ren: () => { const n = $("#rn").value.trim(); rnT(t, n); close(); show(); toast(n || t.fp ? "The name is changed" : "The name is now the first line of the note") },
         del: () => { if (b.dataset.ok !== "1") { b.dataset.ok = "1"; b.textContent = "Tap again to delete. The note does not go to History."; return } delT(isNaN(i) ? S.cur : i) },
@@ -1035,20 +1035,29 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
       return (xs.map(([x, i]) => fRow(x, i)).join("") || (cs.length ? "" : `<div class="px-3 py-2 text-slate-500 dark:text-slate-400">${q ? "No matches." : "No notes here yet."}</div>`)) +
         (cs.length ? `<div class="px-3 pb-1 pt-4 text-[11px] font-medium text-slate-400">Recently closed</div>` + cs.map(([x, i]) => `<div class="group/r relative rounded-md hover:bg-slate-500/5"><button data-a="hopen" data-i="${i}" title="Closed. Click to reopen." class="flex h-8 w-full min-w-0 items-center gap-2.5 px-3 pr-8 text-left text-slate-500 dark:text-slate-400"><span class="text-slate-400">${ic("doc", "size-4 stroke-2")}</span><span class="truncate">${esc(D(x))}</span></button><button data-a="hdel" data-i="${i}" aria-label="Delete file" title="Delete file" class="${SBB} absolute right-1.5 top-1 hidden group-hover/r:grid">${ic("x", "size-3.5 stroke-2")}</button></div>`).join("") : "")
     }
+    // the Explorer: every folder is a section (like VS Code); open tabs show inside their folder. Click a name to open or close it. A filter opens all sections that match.
+    let SXT; const SX = new Set(); // folders that are open in the list; the folder of the shown tab opens when that tab changes
+    function nlA() {
+      const q = NQ.trim(), cnt = k => k >= 0 && F[k].d && DL[F[k].p] ? dVis(k).length : S.tabs.filter(x => k < 0 || x.f === k).length + (k < 0 ? 0 : S.closed.filter(x => x.f === k && x.t.trim()).length);
+      if (SF >= F.length) SF = -1;
+      if (SXT === undefined) S.tabs.forEach(x => SX.add(x.f)); const ct = S.tabs[S.cur]; if (ct && SXT !== ct) { SXT = ct; SX.add(ct.f) }
+      return FV().map(([f, k]) => [k, esc(f.n)]).map(([k, l]) => {
+        const ex = q || SX.has(k), body = ex ? nlR(k, NQ) : "";
+        if (q && /No matches\.|No files in this folder/.test(body)) return "";
+        return `<div class="pb-0.5"><div class="group/r relative"><button data-a="sf" data-i="${k}" aria-expanded="${!!ex}" class="flex h-8 w-full items-center gap-1.5 rounded-md px-2 text-left text-[13px] font-medium hover:bg-slate-500/10">${ic("chev", "size-4 shrink-0 stroke-2 text-slate-400 transition-transform " + (ex ? "" : "-rotate-90"))}<span class="min-w-0 flex-1 truncate">${l}</span><span class="text-xs text-slate-400">${cnt(k) || ""}</span></button>${k >= 0 ? `<button data-a="fe" data-i="${k}" class="${SBB} absolute right-8 top-1 hidden group-hover/r:grid" aria-label="Edit folder" title="Edit folder">${ic("edit", "size-4 stroke-2")}</button>` : ""}</div>${body ? `<div class="pl-4">${body}</div>` : ""}</div>`
+      }).join("")
+    }
     let SBP = ""; // the sidebar panel shown last
     function sbR() {
       const p = S.sp || "e", h = (l, x = "") => `<div class="flex h-12 shrink-0 items-center gap-1 pl-3 pr-3.5 text-[15px] font-semibold text-slate-800 dark:text-slate-100">${l}<div class="flex-1"></div>${x}</div>`, L = s => `<div class="min-h-0 flex-1 overflow-y-auto px-1.5 pb-3">${s}</div>`;
       let o;
       if (p === "e") {
         if (SF >= F.length) SF = -1;
-        const cnt = k => k >= 0 && F[k].d && DL[F[k].p] ? dVis(k).length : S.tabs.filter(x => k < 0 || x.f === k).length + (k < 0 ? 0 : S.closed.filter(x => x.f === k && x.t.trim()).length), cf = SF < 0 ? null : F[SF], mi = (k, l, dt) => `<button data-a="sf" data-i="${k}" class="flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13px] hover:bg-slate-500/10 ${SF === k ? "font-semibold" : ""}">${dt}<span class="min-w-0 flex-1 truncate">${l}</span><span class="text-xs text-slate-400">${cnt(k) || ""}</span></button>`;
-        const bt = (cf ? `<button data-a="fe" data-i="${SF}" class="${SBB}" aria-label="Edit folder" title="Edit folder">${ic("edit", "size-4 stroke-2")}</button>` : "") + `<button data-a="new" class="${SBB}" aria-label="New note" title="New note (Ctrl+N)">${ic("plus", "size-4 stroke-2")}</button><button data-a="nf" class="${SBB}" aria-label="${DESK ? "Open folder" : "New folder"}" title="${DESK ? "Open folder…" : "New folder"}">${ic("fold", "size-4 stroke-2")}</button>`;
-        o =
-          `<div class="relative flex shrink-0 items-center gap-0.5 px-2 pb-2 pt-3"><button data-a="sfm" aria-expanded="${!!SFO}" class="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-md px-2 text-left text-[13px] hover:bg-slate-500/10">${cf ? `<span class="size-2 shrink-0 rounded-full ${dot(cf)}"></span>` : ic("tabs", "size-4 stroke-2 text-slate-400")}<span class="min-w-0 flex-1 truncate font-medium">${cf ? esc(cf.n) : "Open files"}</span>${ic("chev", "size-4 shrink-0 stroke-2 text-slate-400 transition-transform " + (SFO ? "rotate-180" : ""))}</button>${bt}` +
-          (SFO ? `<div id="sfmenu" class="absolute inset-x-3 top-10 z-10 rounded-lg border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-800">` + mi(-1, "Open files", ic("tabs", "size-4 stroke-2 text-slate-400")) + FV().map(([f, k]) => mi(k, esc(f.n), `<span class="size-2 shrink-0 rounded-full ${dot(f)}"></span>`)).join("") + `</div>` : "") + `</div>` +
-          `<div class="flex shrink-0 items-center gap-1 px-3 pb-2"><label class="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-lg bg-slate-500/10 px-2.5 text-slate-500 dark:text-slate-400">${ic("find", "size-4 stroke-2")}<input id="nq" value="${esc(NQ)}" placeholder="Filter notes" autocomplete="off" aria-label="Filter notes by name" class="min-w-0 flex-1 bg-transparent text-[13px] text-slate-900 outline-none placeholder:text-slate-500 dark:text-slate-100 dark:placeholder:text-slate-400"></label><button data-a="ssm" aria-expanded="${!!SSM}" class="${SBB} !size-8" aria-label="Sort" title="Sort: ${(SRT.find(r => r[0] === S.so) || SRT[0])[1]}">${ic("srt", "size-4 stroke-2")}</button></div>` +
+        const bt = `<button data-a="new" class="${SBB}" aria-label="New note" title="New note (Ctrl+N)">${ic("plus", "size-4 stroke-2")}</button><button data-a="nf" class="${SBB}" aria-label="${DESK ? "Open folder" : "New folder"}" title="${DESK ? "Open folder…" : "New folder"}">${ic("fold", "size-4 stroke-2")}</button>`;
+        o = h("Explorer", bt) +
+          `<div class="relative flex shrink-0 items-center gap-1 px-3 pb-2"><label class="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-lg bg-slate-500/10 px-2.5 text-slate-500 dark:text-slate-400">${ic("find", "size-4 stroke-2")}<input id="nq" value="${esc(NQ)}" placeholder="Filter notes" autocomplete="off" aria-label="Filter notes by name" class="min-w-0 flex-1 bg-transparent text-[13px] text-slate-900 outline-none placeholder:text-slate-500 dark:text-slate-100 dark:placeholder:text-slate-400"></label><button data-a="ssm" aria-expanded="${!!SSM}" class="${SBB} !size-8" aria-label="Sort" title="Sort: ${(SRT.find(r => r[0] === S.so) || SRT[0])[1]}">${ic("srt", "size-4 stroke-2")}</button></div>` +
           (SSM ? `<div id="ssmenu" class="absolute right-3 top-[148px] z-10 w-52 rounded-lg border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-800">` + SRT.map(([k, l]) => `<button data-a="ss" data-v="${k}" class="flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13px] hover:bg-slate-500/10 ${(S.so || "o") === k ? "font-semibold" : ""}"><span class="grid size-4 place-items-center text-violet-600 dark:text-violet-400">${(S.so || "o") === k ? ic("chk", "size-4 stroke-2") : ""}</span>${l}</button>`).join("") + `</div>` : "") +
-          L(`<div id="nl">${nlR()}</div>`)
+          L(`<div id="nl">${nlA()}</div>`)
       } else if (p === "s") {
         o = h("Search") + `<div class="shrink-0 px-2 pb-2"><input id="sq" class="w-full rounded-md border border-slate-300 bg-white px-2 py-1 outline-none placeholder:text-slate-500 focus:border-violet-500 dark:border-slate-700 dark:bg-slate-900 dark:placeholder:text-slate-400" placeholder="Search all tabs" value="${esc(SQ)}" autocomplete="off"></div>` + L(`<div id="sr"></div>`)
       } else if (p === "g") {
@@ -1057,14 +1066,14 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
         const xs = S.tabs.map((x, i) => [x, i]).filter(r => r[0].s);
         o = h("Starred") + L(xs.length ? xs.map(([x, i]) => fRow(x, i)).join("") : `<div class="px-2 py-1 text-slate-500 dark:text-slate-400">No starred tabs yet. Use the star in the menu to star a tab.</div>`)
       } else {
-        o = `<div class="flex shrink-0 items-center gap-0.5 px-2 pb-2 pt-3"><div class="flex h-8 min-w-0 flex-1 items-center gap-2 px-2 text-[13px]">${ic("doc", "size-4 shrink-0 stroke-2 text-slate-400")}<span class="min-w-0 flex-1 truncate font-medium">Closed files</span></div>${S.closed.length ? `<button data-a="hclr" class="h-8 shrink-0 rounded-md px-2 text-[13px] text-red-600 hover:bg-slate-500/10 dark:text-red-400">Clear all</button>` : ""}</div>` +
-          L(`<div id="hl">` + (S.closed.length ? S.closed.map((x, i) => !x.t.trim() && !x.fp ? "" : `<div class="group/r relative rounded-md hover:bg-slate-500/5"><button data-a="hopen" data-i="${i}" title="${esc(fullP(x))}. Click to reopen." class="flex w-full min-w-0 items-center gap-2.5 px-3 py-1 pr-8 text-left"><span class="ni ${tx(F[x.f])}">${ic("doc", "size-4 stroke-2")}</span><span class="min-w-0 flex-1"><span class="block truncate">${esc(D(x))}</span></span></button><button data-a="hdel" data-i="${i}" aria-label="Remove from History" title="Remove from History" class="${SBB} absolute right-1.5 top-1 hidden group-hover/r:grid">${ic("x", "size-3.5 stroke-2")}</button></div>`).join("") : `<div class="px-3 py-2 text-slate-500 dark:text-slate-400">No closed tabs yet.</div>`) + `</div>`)
+        o = `<div class="flex shrink-0 items-center gap-0.5 px-2 pb-2 pt-3"><div class="flex h-8 min-w-0 flex-1 items-center gap-2 px-2 text-[13px]"><span class="min-w-0 flex-1 truncate font-medium">Closed files</span></div>${S.closed.length ? `<button data-a="hclr" class="h-8 shrink-0 rounded-md px-2 text-[13px] text-red-600 hover:bg-slate-500/10 dark:text-red-400">Clear all</button>` : ""}</div>` +
+          L(`<div id="hl" class="pl-4">` + (S.closed.length ? S.closed.map((x, i) => !x.t.trim() && !x.fp ? "" : `<div class="group/r relative rounded-md hover:bg-slate-500/5"><button data-a="hopen" data-i="${i}" title="${esc(fullP(x))}. Click to reopen." class="flex h-8 w-full min-w-0 items-center gap-2.5 px-3 pr-8 text-left"><span class="ni ${tx(F[x.f])}">${ic("doc", "size-4 stroke-2")}</span><span class="truncate">${esc(D(x))}</span></button><button data-a="hdel" data-i="${i}" aria-label="Remove from History" title="Remove from History" class="${SBB} absolute right-1.5 top-1 hidden group-hover/r:grid">${ic("x", "size-3.5 stroke-2")}</button></div>`).join("") : `<div class="px-3 py-2 text-slate-500 dark:text-slate-400">No closed tabs yet.</div>`) + `</div>`)
       }
       // the panel is rebuilt: keep the scroll position when the same panel is shown again (for example after a toggle in Settings)
       const sc = $("#sbc > .overflow-y-auto"), top = sc && SBP === p ? sc.scrollTop : 0; SBP = p;
       $("#sbc").innerHTML = o;
       const sn = $("#sbc > .overflow-y-auto"); if (sn && top) sn.scrollTop = top;
-      if (p === "e") $("#nq").oninput = e => { NQ = e.target.value; $("#nl").innerHTML = nlR() };
+      if (p === "e") $("#nq").oninput = e => { NQ = e.target.value; $("#nl").innerHTML = nlA() };
       if (p === "s") { $("#sq").oninput = e => { SQ = e.target.value; srR() }; srR() }
     }
     // search results: each tab with matches, then up to 5 matching lines
@@ -1265,7 +1274,7 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
     document.addEventListener("keydown", e => { if (e.key === "Escape") cxX() });
     document.addEventListener("contextmenu", e => { cxX(); const fr = DESK && e.target.closest("[data-a=sf]"), el = e.target.closest(".tab, .cd");
       if (fr && F[+fr.dataset.i]?.d) { e.preventDefault(); e.stopImmediatePropagation(); cx.innerHTML = it(["Show folder in File Explorer", `data-a="revf" data-i="${fr.dataset.i}"`]); cx.style.display = "block"; cx.style.left = Math.min(e.clientX, innerWidth - cx.offsetWidth - 4) + "px"; cx.style.top = Math.min(e.clientY, innerHeight - cx.offsetHeight - 4) + "px"; return }
-      if (el && (DESK || DK.matches)) { e.preventDefault(); e.stopImmediatePropagation(); cxOpen(+el.dataset.i, e.clientX, e.clientY) } else if (DESK && SF >= 0 && F[SF].d && e.target.closest("#nl, #sbc")) { e.preventDefault(); e.stopImmediatePropagation(); cxList(e.clientX, e.clientY, e.target.closest("[data-a=dopen]")?.dataset.v) } else if (DK.matches && !e.shiftKey && e.target.closest("#cmh")) { e.preventDefault(); e.stopImmediatePropagation(); cxEd(e.clientX, e.clientY) } }, true);
+      if (el && (DESK || DK.matches)) { e.preventDefault(); e.stopImmediatePropagation(); cxOpen(+el.dataset.i, e.clientX, e.clientY) } else if (DESK && (SF = +(e.target.closest("[data-a=dopen]")?.dataset.i ?? SF), SF >= 0 && F[SF].d) && e.target.closest("#nl, #sbc")) { e.preventDefault(); e.stopImmediatePropagation(); cxList(e.clientX, e.clientY, e.target.closest("[data-a=dopen]")?.dataset.v) } else if (DK.matches && !e.shiftKey && e.target.closest("#cmh")) { e.preventDefault(); e.stopImmediatePropagation(); cxEd(e.clientX, e.clientY) } }, true);
     $("#ed").addEventListener("scroll", cxX, true);
     // shortcuts (VS Code keys where the browser lets a page use them)
     document.addEventListener("keydown", e => {
