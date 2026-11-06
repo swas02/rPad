@@ -12,7 +12,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", default-features = false, features = ["wry", "compression", "devtools"] }
+tauri = { version = "2", default-features = false, features = ["wry", "compression"] }
 
 # Small, fast binary. Nothing here changes webview memory, but it keeps the Rust side negligible.
 [profile.release]

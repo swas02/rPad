@@ -20,7 +20,7 @@
         "minHeight": 320,
         "center": true,
         "devtools": false,
-        "additionalBrowserArgs": "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection,Translate,OptimizationHints,MediaRouter --disable-background-networking --disable-component-update --disable-sync"
+        "additionalBrowserArgs": "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection"
       }
     ],
     "security": {
