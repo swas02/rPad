@@ -10,6 +10,8 @@ export const caption = color => invoke("caption", { color }).catch(() => {});
 // window title (also shown on the taskbar and in Alt+Tab) and "Keep on top"
 export const title = s => getCurrentWindow().setTitle(s).catch(() => {});
 export const pin = on => getCurrentWindow().setAlwaysOnTop(on).catch(() => {});
+// Open file: full paths of the picked files; their folders get access (see pick_files() in src-tauri/src/lib.rs)
+export const pickFiles = () => invoke("pick_files");
 export const dialog = { open, ask };
 export const path = { join };
 export const opener = { revealItemInDir };

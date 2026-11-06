@@ -11,7 +11,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_os::init())
         .manage(Caption(Mutex::new(None)))
-        .invoke_handler(tauri::generate_handler![caption])
+        .invoke_handler(tauri::generate_handler![caption, pick_files])
         // the window gets or loses focus: paint the title bar again (the title text is grey when the window is not active)
         .on_window_event(|w, e| {
             if let tauri::WindowEvent::Focused(f) = e {
@@ -20,6 +20,18 @@ pub fn run() {
         })
         .run(tauri::generate_context!())
         .expect("error while running rPad");
+}
+
+// Open file: the native dialog, then the folder of each picked file joins the fs scope (without subfolders), so the file
+// opens in place and saves back to the same file. Only folders of files the user picked get access; the page cannot name a folder.
+// The picked file must stay in the Library under its folder, like a file from "Open folder". persisted-scope keeps the access.
+#[tauri::command]
+async fn pick_files(app: tauri::AppHandle, window: tauri::Window) -> Vec<String> {
+    use tauri_plugin_dialog::DialogExt;
+    use tauri_plugin_fs::FsExt;
+    let Some(fs) = app.dialog().file().set_title("Open file").set_parent(&window).blocking_pick_files() else { return vec![] };
+    fs.into_iter().filter_map(|f| f.into_path().ok()).filter(|p| p.parent().is_some_and(|d| app.fs_scope().allow_directory(d, false).is_ok()))
+        .map(|p| p.to_string_lossy().into_owned()).collect()
 }
 
 // the last title bar colour from the page (0xRRGGBB)

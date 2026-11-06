@@ -86,8 +86,9 @@
       #sheet .py-3 { padding-top: 5px; padding-bottom: 5px }
       #sheet .py-2\.5, #sheet .py-2 { padding-top: 4px; padding-bottom: 4px }
       #sheet .rounded-xl, #sheet .rounded-full, #sheet .rounded-lg, #sheet .rounded-md { border-radius: 4px }
-      #sheet [data-a]:hover { background: rgb(var(--n100)) }
-      .dark #sheet [data-a]:hover { background: rgb(var(--n700)) }
+      /* hover grey only on plain rows: buttons with their own colour (Save, colour swatches) keep it */
+      #sheet [data-a]:not([class*="bg-"]):hover { background: rgb(var(--n100)) }
+      .dark #sheet [data-a]:not([class*="bg-"]):hover { background: rgb(var(--n700)) }
       #sheet .size-5 { width: 16px; height: 16px; border-width: 1px }
       #sheet .size-10 { width: 28px; height: 28px }
       #sheet .shadow { box-shadow: none }
@@ -336,6 +337,8 @@
     // a new session drops empty files (no text, no name you gave them); with nothing left, leave one empty tab
     const keepX = x => S.ce === false || x.t.trim() || x.n; S.tabs = S.tabs.filter(keepX); S.closed = (S.closed || []).filter(keepX); if (!S.tabs.length) S.tabs.push({ t: "", f: 0 });
     if (S.F) F.splice(0, F.length, ...S.F); S.F = F;
+    // folders to list, as [folder, index]: not the hidden folders of files opened with Open file (f.h)
+    const FV = () => F.map((f, k) => [f, k]).filter(([f]) => !f.h);
     // once: the first folder's old default colour (blue) becomes the app's purple
     if (!S.pv) { if (F[0] && F[0].c === "blue") F[0].c = "purple"; S.pv = 1 }
     S.tabs.forEach(x => { if (!F[x.f]) x.f = 0 }); S.cur = Math.min(Math.max(+S.cur || 0, 0), S.tabs.length - 1);
@@ -491,7 +494,7 @@ ${OG >= 0 ? `<div class="px-3.5 pb-1 pt-2">${oqI("w-full")}</div>` : ""}<div id=
         $("#ol").innerHTML = `<div class="${CAP} !px-3.5">${rows.length} ${rows.length === 1 ? "tab" : "tabs"}</div>` +
           (rows.length ? `<div class="grid grid-cols-2 gap-3 px-3.5 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">${rows.map(r => card(r[0], r[1])).join("")}</div>` : `<div class="${CAP} !px-3.5">${OM === "s" && !q ? "No starred tabs yet. Tap the star on a tab." : "No tabs found."}</div>`)
       } else {
-        const rows = F.map((f, i) => [f, i]).filter(r => !q || r[0].n.toLowerCase().includes(q));
+        const rows = FV().filter(r => !q || r[0].n.toLowerCase().includes(q));
         $("#ol").innerHTML = `<div class="${CAP} !px-3.5">${rows.length} ${rows.length === 1 ? "folder" : "folders"}</div><div class="px-1.5">` + rows.map(([f, i]) => {
           const n = S.tabs.filter(x => x.f === i).length;
           return `<div class="flex items-center"><button class="${RW} ${f.ok ? "" : "opacity-50"}" data-a="og" data-i="${i}"><span class="grid size-10 shrink-0 place-items-center rounded-xl ${pill(f)}">${ic("fold")}</span><span class="min-w-0 flex-1"><b class="font-medium">${esc(f.n)}</b><small class="${SM} truncate">${n} ${n === 1 ? "tab" : "tabs"} open · ${fLoc(f)}</small></span></button><button class="${IB}" data-a="fe" data-i="${i}" aria-label="Edit folder">${ic("edit")}</button></div>`
@@ -501,7 +504,7 @@ ${OG >= 0 ? `<div class="px-3.5 pb-1 pt-2">${oqI("w-full")}</div>` : ""}<div id=
     // folder button (status bar on desktop, top bar on phone): a small menu next to the button. A second click closes it.
     function wsS(b) {
       const t = cur(); if (cx.style.display === "block" && cx.dataset.by === "ws") return cxX();
-      cx.innerHTML = `<div class="px-2 pb-1 pt-0.5 text-[12px] opacity-60">Move this tab to</div>` + [...F.map((f, i) => [esc(f.n), `data-a="tf" data-i="${S.cur}" data-v="${i}" title="${f.ok ? fLoc(f) : "Not connected"}"`, "", i === t.f, !f.ok || i === t.f]), "-", ["New folder…", 'data-a="nf" data-v="mv"']].map(it).join("");
+      cx.innerHTML = `<div class="px-2 pb-1 pt-0.5 text-[12px] opacity-60">Move this tab to</div>` + [...FV().map(([f, i]) => [esc(f.n), `data-a="tf" data-i="${S.cur}" data-v="${i}" title="${f.ok ? fLoc(f) : "Not connected"}"`, "", i === t.f, !f.ok || i === t.f]), "-", ["New folder…", 'data-a="nf" data-v="mv"']].map(it).join("");
       cx.dataset.by = "ws"; cx.style.display = "block";
       const r = b.getBoundingClientRect(), w = cx.offsetWidth, h = cx.offsetHeight;
       cx.style.left = Math.max(4, Math.min(r.left, innerWidth - w - 4)) + "px"; cx.style.top = (r.top > innerHeight / 2 ? r.top - h - 4 : r.bottom + 4) + "px"
@@ -763,20 +766,38 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
       if (!q && t === cur() && (t.b !== b0 || t.t !== t0)) show(true)
     }
     addEventListener("focus", dSync); addEventListener("pagehide", () => [...dW.keys()].forEach(t => t.fp ? dWrite(t) : dCreate(t)));
+    // the Library folder for disk path p (added if it is not there); returns its index.
+    // h: only a file in it was opened (Open file). The folder is kept for its tabs but not listed; Open folder on it lists it.
+    function dFolder(p, h) {
+      let k = F.findIndex(f => f.d && f.p.toLowerCase() === p.toLowerCase());
+      if (k < 0) { const cs = Object.keys(COL); F.push({ n: dBase(p), p, ok: 1, c: cs[(F.length * 3) % cs.length], d: 1, ...(h ? { h: 1 } : {}) }); k = F.length - 1 }
+      else if (!h) delete F[k].h;
+      return k
+    }
     // Open folder: native dialog, then the folder joins the Library and is selected
     function dAdd(mv) {
       inv("pick_folder").then(p => {
-        if (!p) return; let k = F.findIndex(f => f.d && f.p.toLowerCase() === p.toLowerCase());
-        if (k < 0) { const cs = Object.keys(COL); F.push({ n: dBase(p), p, ok: 1, c: cs[(F.length * 3) % cs.length], d: 1 }); k = F.length - 1 }
+        if (!p) return; const k = dFolder(p);
         if (mv) dMove(cur(), k);
         SF = k; S.sbh = 0; S.sp = "e"; app.classList.remove("sbh"); close(); keep(); show(); dScan(k)
       }, () => toast("Cannot open the folder dialog"))
     }
+    // Open file: the file opens in place (edits save to the same file). Its folder joins the Library, like Open folder.
+    function dPick() {
+      TAU.pickFiles().then(ps => {
+        if (!ps.length) return;
+        for (const p of ps) { const i = Math.max(p.lastIndexOf("\\"), p.lastIndexOf("/")), d = p.slice(0, i), k = dFolder(/^[a-z]:$/i.test(d) ? d + "\\" : d, 1); dOpen(k, p.slice(i + 1)) }
+        keep(); show()
+      }, () => toast("Cannot open the file dialog"))
+    }
     function fSheet(fi, mv) {
       const f = fi >= 0 ? F[fi] : null; SC = f ? f.c : "purple";
-      sheet(`<h3 class="${H3}">${f ? "Edit folder" : "New folder"}</h3><div class="flex px-3 py-1.5"><input id="fn" class="${INP}" placeholder="Folder name" value="${f ? esc(f.n) : ""}"></div>
+      sheet(`<h3 class="${H3}">${f ? "Edit folder" : "New folder"}</h3>${f && f.d
+        // a disk folder: rPad shows its real name, so the name cannot change here (only the colour)
+        ? `<div class="px-3 py-1.5"><b class="block truncate font-medium">${esc(f.n)}</b><small class="${SM} truncate">${esc(f.p)}</small></div>`
+        : `<div class="flex px-3 py-1.5"><input id="fn" class="${INP}" placeholder="Folder name" value="${f ? esc(f.n) : ""}"></div>`}
 <div class="flex flex-wrap gap-3 px-3 py-3">${Object.keys(COL).map(k => `<button class="swc grid size-9 place-items-center rounded-full text-white bg-${COL[k]}-500" data-a="pc" data-v="${k}" aria-label="${k}">${k === SC ? ic("chk", "size-[17px] stroke-[3]") : ""}</button>`).join("")}</div>
-<button class="${PB}" data-a="fsave" data-i="${fi}" data-v="${mv ? "mv" : ""}">${f ? "Save" : "Create folder"}</button>${f && F.length > 1 ? `<button class="${RW} mt-2 justify-center text-red-600 dark:text-red-400" data-a="fdel" data-i="${fi}">${f.d ? "Remove from rPad" : "Delete folder"}</button>` : ""}`)
+<button class="${PB}" data-a="fsave" data-i="${fi}" data-v="${mv ? "mv" : ""}">${f ? "Save" : "Create folder"}</button>${f && F.length > 1 ? `<button class="mx-3 mt-1 w-[calc(100%_-_1.5rem)] rounded-xl py-3 font-medium text-red-600 active:bg-slate-100 dark:text-red-400 dark:active:bg-slate-700" data-a="fdel" data-i="${fi}">${f.d ? "Remove from rPad" : "Delete folder"}</button>` : ""}`)
     }
     function histS() {
       sheet(`<h3 class="${H3}">History</h3>` + (S.closed.length ? `<button class="${RW} justify-center font-medium text-red-600 dark:text-red-400" data-a="hclr">Clear all</button>` + S.closed.map((x, i) => !x.t.trim() ? "" : `<div class="flex items-center rounded-xl active:bg-slate-100 dark:active:bg-slate-700"><button class="flex min-w-0 flex-1 items-center gap-3 px-3 py-3 text-left" data-a="hopen" data-i="${i}"><span class="min-w-0 flex-1"><b class="block truncate font-medium">${esc(D(x))}</b><small class="${SM}">${esc(F[x.f].n)}</small></span><span class="text-xs text-slate-400">${x.d || ""}</span></button><button class="${IBS} mr-1" data-a="hdel" data-i="${i}" aria-label="Remove from History" title="Remove from History">${ic("x", "size-[18px] stroke-[1.8]")}</button></div>`).join("") : `<div class="${CAP}">No closed tabs yet.</div>`))
@@ -821,11 +842,11 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
 <button class="${RW}" data-a="tcl" data-i="${i}">${ic("x")}<span>Close tab</span></button>`)
     }
     // One row per folder for a folder sheet. at(k) gives the data attributes of the row button; the row of folder "sel" gets a check mark.
-    const fPick = (h, at, sel) => sheet(`<h3 class="${H3}">${h}</h3>${F.map((f, k) => `<button class="${RW} ${f.ok ? "" : "opacity-50"}" ${at(k)}><span class="grid size-10 shrink-0 place-items-center rounded-xl ${pill(f)}">${ic("fold")}</span><span class="flex-1">${esc(f.n)}<small class="${SM}">${f.ok ? fLoc(f) : "Not connected"}</small></span>${k === sel ? ic("chk") : ""}</button>`).join("")}`);
+    const fPick = (h, at, sel) => sheet(`<h3 class="${H3}">${h}</h3>${FV().map(([f, k]) => `<button class="${RW} ${f.ok ? "" : "opacity-50"}" ${at(k)}><span class="grid size-10 shrink-0 place-items-center rounded-xl ${pill(f)}">${ic("fold")}</span><span class="flex-1">${esc(f.n)}<small class="${SM}">${f.ok ? fLoc(f) : "Not connected"}</small></span>${k === sel ? ic("chk") : ""}</button>`).join("")}`);
     function tmvS(i) { fPick("Move to folder", k => `data-a="tf" data-i="${i}" data-v="${k}"`, S.tabs[i].f) }
     // New note, for all apps. The folder only tells where the file goes when it gets text or is saved (see dSave).
     // ntAsk (Ctrl+N, Ctrl+Alt+N, File > New note…): always ask in which folder. With only one folder there is nothing to ask.
-    function ntAsk() { if (F.length < 2) return add(0); fPick("New note in", j => `data-a="nt" data-i="${j}"`, cur() ? cur().f : 0) }
+    function ntAsk() { if (FV().length < 2) return add(0); fPick("New note in", j => `data-a="nt" data-i="${j}"`, cur() ? cur().f : 0) }
     // newNote ("+" buttons): if a folder is already chosen (k, the switcher's folder group, or the folder open in the visible sidebar), use it; else ask.
     function newNote(k) {
       if (!(k >= 0)) k = app.classList.contains("insw") && OG >= 0 ? OG : DK.matches && !S.sbh ? SF : -1;
@@ -873,8 +894,8 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
         pnew: () => { close(); (navigator.clipboard && navigator.clipboard.readText ? navigator.clipboard.readText() : Promise.reject()).then(s => { if (!s) return toast("The clipboard is empty"); add(); cur().t = s; show(true) }, () => toast("Cannot read the clipboard. Touch and hold in the note, then select Paste.")) }, tco: () => closeMany(i), tca: () => closeMany(-1),
         pc: () => { SC = v; document.querySelectorAll(".swc").forEach(s => s.innerHTML = s.dataset.v === SC ? ic("chk", "size-[17px] stroke-[3]") : "") },
         fsave: () => {
-          const n = $("#fn").value.trim() || "Untitled folder";
-          if (i >= 0) { F[i].n = n; F[i].c = SC }
+          const n = $("#fn")?.value.trim() || "Untitled folder";
+          if (i >= 0) { if (!F[i].d) F[i].n = n; F[i].c = SC }
           else { F.push({ n, p: "Documents/" + n, ok: 1, c: SC }); if (v === "mv") t.f = F.length - 1 }
           close(); render(); toast(i >= 0 ? "The folder is updated" : "The folder is created")
         },
@@ -997,7 +1018,7 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
         const bt = (cf ? `<button data-a="fe" data-i="${SF}" class="${SBB}" aria-label="Edit folder" title="Edit folder">${ic("edit", "size-4 stroke-2")}</button>` : "") + `<button data-a="new" class="${SBB}" aria-label="New note" title="New note (Ctrl+N)">${ic("plus", "size-4 stroke-2")}</button><button data-a="nf" class="${SBB}" aria-label="${DESK ? "Open folder" : "New folder"}" title="${DESK ? "Open folder…" : "New folder"}">${ic("fold", "size-4 stroke-2")}</button>`;
         o =
           `<div class="relative flex shrink-0 items-center gap-0.5 px-2 pb-2 pt-3"><button data-a="sfm" aria-expanded="${!!SFO}" class="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-md px-2 text-left text-[13px] hover:bg-slate-500/10">${cf ? `<span class="size-2 shrink-0 rounded-full ${dot(cf)}"></span>` : ic("tabs", "size-4 stroke-2 text-slate-400")}<span class="min-w-0 flex-1 truncate font-medium">${cf ? esc(cf.n) : "Open files"}</span>${ic("chev", "size-4 shrink-0 stroke-2 text-slate-400 transition-transform " + (SFO ? "rotate-180" : ""))}</button>${bt}` +
-          (SFO ? `<div id="sfmenu" class="absolute inset-x-3 top-10 z-10 rounded-lg border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-800">` + mi(-1, "Open files", ic("tabs", "size-4 stroke-2 text-slate-400")) + F.map((f, k) => mi(k, esc(f.n), `<span class="size-2 shrink-0 rounded-full ${dot(f)}"></span>`)).join("") + `</div>` : "") + `</div>` +
+          (SFO ? `<div id="sfmenu" class="absolute inset-x-3 top-10 z-10 rounded-lg border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-800">` + mi(-1, "Open files", ic("tabs", "size-4 stroke-2 text-slate-400")) + FV().map(([f, k]) => mi(k, esc(f.n), `<span class="size-2 shrink-0 rounded-full ${dot(f)}"></span>`)).join("") + `</div>` : "") + `</div>` +
           `<div class="flex shrink-0 items-center gap-1 px-3 pb-2"><label class="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-lg bg-slate-500/10 px-2.5 text-slate-500 dark:text-slate-400">${ic("find", "size-4 stroke-2")}<input id="nq" value="${esc(NQ)}" placeholder="Filter notes" autocomplete="off" aria-label="Filter notes by name" class="min-w-0 flex-1 bg-transparent text-[13px] text-slate-900 outline-none placeholder:text-slate-500 dark:text-slate-100 dark:placeholder:text-slate-400"></label><button data-a="ssm" aria-expanded="${!!SSM}" class="${SBB} !size-8" aria-label="Sort" title="Sort: ${(SRT.find(r => r[0] === S.so) || SRT[0])[1]}">${ic("srt", "size-4 stroke-2")}</button></div>` +
           (SSM ? `<div id="ssmenu" class="absolute right-3 top-[148px] z-10 w-52 rounded-lg border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-800">` + SRT.map(([k, l]) => `<button data-a="ss" data-v="${k}" class="flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13px] hover:bg-slate-500/10 ${(S.so || "o") === k ? "font-semibold" : ""}"><span class="grid size-4 place-items-center text-violet-600 dark:text-violet-400">${(S.so || "o") === k ? ic("chk", "size-4 stroke-2") : ""}</span>${l}</button>`).join("") + `</div>` : "") +
           L(`<div id="nl">${nlR()}</div>`)
@@ -1033,7 +1054,9 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
     }
     function stR() {
       const t = cur(), { from: a, to: b, ln, col } = ed.sel(), w = WC;
-      $("#st").innerHTML = `<button data-a="ws" class="sf ${STB}" title="Move this tab to a folder">${ic("fold", "size-3.5 shrink-0 stroke-2 " + tx(F[t.f]))}<span>${esc(F[t.f].n)}</span></button><div class="flex-1"></div>` +
+      // tooltip: where the tab is on disk (the file, or its folder when it is not a file yet), then what a click does
+      const sf = F[t.f], loc = sf.d ? sf.p.replace(/[\\/]$/, "") + (t.fp ? "\\" + t.fp : "") + "\n" : "";
+      $("#st").innerHTML = `<button data-a="ws" class="sf ${STB}" title="${esc(loc)}Move this tab to a folder">${ic("fold", "size-3.5 shrink-0 stroke-2 " + tx(F[t.f]))}<span>${esc(F[t.f].n)}</span></button><div class="flex-1"></div>` +
         `<span class="px-2">Ln ${ln}, Col ${col}${b > a ? ` (${b - a} selected)` : ""}</span><span class="px-2">${w} word${w === 1 ? "" : "s"}, ${ed.length} characters</span>` +
         `<button data-a="tg" data-v="wrap" class="s1 ${STB}" title="Toggle word wrap">Wrap: ${S.wrap === false ? "Off" : "On"}</button><button data-a="set" class="s2 ${STB}" title="Display settings">${S.fs}px · ${S.font === "sans" ? "Sans" : !S.font || S.font === "mono" ? "Mono" : esc(S.font)}</button><button data-a="thc" class="s3 ${STB}" title="Change theme">Theme: ${S.theme[0].toUpperCase() + S.theme.slice(1)}</button>`
     }
@@ -1053,7 +1076,7 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
       },
       dla: () => { const xs = S.tabs.filter(x => x.t.trim()); xs.forEach((x, k) => setTimeout(() => dlF(fileOf(x), x.t), k * 250)); toast(xs.length ? `rPad is downloading ${xs.length} file${xs.length === 1 ? "" : "s"}` : "No tab has text") },
       bk: () => { const n = `notepad-backup-${new Date().toISOString().slice(0, 10)}.json`; dlF(n, JSON.stringify({ app: "rough-notepad", v: 1, F, tabs: S.tabs, closed: S.closed }), "application/json"); toast(`rPad saved a backup of ${S.tabs.length} tabs to ${n}`) },
-      open: () => { FOM = ""; $("#fop").accept = ""; $("#fop").click() },
+      open: () => { if (DESK) return dPick(); FOM = ""; $("#fop").accept = ""; $("#fop").click() },
       rs: () => { FOM = "bk"; $("#fop").accept = ".json"; $("#fop").click() },
       un: undo, re: redo,
       sel: () => ed.selectAll(),
@@ -1070,7 +1093,7 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
     // restore a backup: adds its tabs (skipping ones already open) and any folders it needs
     function restore(s) {
       let d; try { d = JSON.parse(s) } catch (e) { } if (!d || !Array.isArray(d.tabs)) return toast("This file is not an rPad backup");
-      const fm = (d.F || []).map(f => { let k = F.findIndex(g => g.n === f.n); if (k < 0) { F.push({ n: f.n, p: f.p || "Documents/" + f.n, ok: 1, c: f.c || "purple" }); k = F.length - 1 } return k });
+      const fm = (d.F || []).map(f => { let k = F.findIndex(g => g.n === f.n && !g.h); if (k < 0) { F.push({ n: f.n, p: f.p || "Documents/" + f.n, ok: 1, c: f.c || "purple" }); k = F.length - 1 } return k });
       const have = new Set(S.tabs.map(x => x.t)), at = S.tabs.length;
       d.tabs.forEach(x => { if (typeof x.t === "string" && x.t.trim() && !have.has(x.t)) { have.add(x.t); S.tabs.push({ t: x.t, f: fm[x.f] ?? 0, n: x.n, x: x.x, s: x.s, m: x.m }) } });
       const n = S.tabs.length - at; if (n) S.cur = at; swv(false); show(true); toast(n ? `rPad opened ${n} tab${n === 1 ? "" : "s"} from the backup` : "These tabs are already open")
