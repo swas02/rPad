@@ -30,15 +30,21 @@
     /* Phone look: pill tabs, brighter chrome icons and counter (desktop overrides below) */
     #tabs { gap: 6px; padding: 0 12px }
     #tabs .tab { margin: 6px 0; padding: 0 8px 0 12px; border-radius: 9999px }
-    #tabs .tab.on { background: rgb(var(--a500) / .16) }
+    #tabs .tab.on { background-color: rgb(var(--a500) / .16) }
     #tabs .tab.on::after { display: none }
     #top { border-bottom: 1px solid rgb(var(--n200)) }
     .dark #top { border-bottom-color: rgb(var(--n800)) }
     #star, #wsb { color: rgb(var(--n600)) }
     .dark #star, .dark #wsb { color: rgb(var(--n300)) }
+    #star[aria-pressed="true"] { color: rgb(245 158 11) } /* starred: amber, in light and dark (must come after the two rules above) */
     .dark #ct { color: rgb(var(--n300)) }
-    @media (min-width: 900px) {
-      #app { display: grid; grid-template-columns: 48px var(--sbw, 260px) minmax(0, 1fr); grid-template-rows: 30px auto auto auto auto minmax(0, 1fr) 24px; padding: 0 }
+    /* Scratchpad note (saved within rPad, not as a file): a faint diagonal hatch behind the editor and on its tab, and a hint line under "Start typing". Same for all apps. */
+    #ed.scr, #ed.scr .cm-gutters, #tabs .tab.scr { background-image: repeating-linear-gradient(-45deg, rgb(var(--n500) / var(--ha, .08)) 0 1px, transparent 1px 10px) }
+    #tabs .tab.scr.on { --ha: .22 } /* the selected tab has a lighter fill, so its lines must be stronger to show */
+    #wl small { display: none; margin-top: .25rem; font: 13px/1.4 system-ui, sans-serif; opacity: .8; white-space: normal }
+    #ed.scr #wl small { display: block }
+    @media (min-width: 600px) {
+      #app { display: grid; grid-template-columns: 48px max(220px, var(--sbw, 260px)) minmax(0, 1fr); grid-template-rows: 30px auto auto auto auto minmax(0, 1fr) 24px; padding: 0 }
       #app.sbh { grid-template-columns: 48px 0 minmax(0, 1fr) }
       #app > * { grid-column: 3 }
       #mb { grid-column: 1 / -1; grid-row: 1; z-index: 25 }
@@ -51,7 +57,14 @@
       /* Find floats over the top right of the editor */
       #fd, #rp { grid-row: 6; align-self: start; justify-self: end; z-index: 15; width: min(440px, calc(100% - 40px)); margin-right: 20px; box-shadow: 0 4px 14px rgb(0 0 0 / .12) }
       #rp { margin-top: 62px }
-      #st { grid-column: 1 / -1; grid-row: 7 }
+      #st { grid-column: 1 / -1; grid-row: 7; white-space: nowrap; overflow: hidden }
+      /* status bar never wraps: the folder name shortens with "…", and the least useful items hide as the window gets narrower */
+      #st > * { flex-shrink: 0 }
+      #st > .sf { flex-shrink: 1; min-width: 0 }
+      #st > .sf span { overflow: hidden; text-overflow: ellipsis }
+      @media (max-width: 819px) { #st .s3 { display: none } }
+      @media (max-width: 739px) { #st .s2 { display: none } }
+      @media (max-width: 679px) { #st .s1 { display: none } }
       #sw { grid-row: 2 / 7 }
       #sh, #ts { grid-column: 1 / -1; grid-row: 1 / -1 }
       #top, #fb, #tb, #tg, #ct, #sheet > .hdl { display: none !important }
@@ -74,12 +87,12 @@
       #tabs { gap: 0; padding: 0; -webkit-mask-image: none; mask-image: none }
       #tabs .tab { padding: 0 8px 0 12px; max-width: 220px; font-size: 13px; border-right: 1px solid rgb(var(--n200)) }
       .dark #tabs .tab { border-color: rgb(var(--n800)) }
-      #tabs .tab.on { background: rgb(var(--n50)) }
-      .dark #tabs .tab.on { background: rgb(var(--n900)) }
+      #tabs .tab.on { background-color: rgb(var(--n50)) }
+      .dark #tabs .tab.on { background-color: rgb(var(--n900)) }
       #tabs .tab.on::after { top: 0; bottom: auto }
       #ed .cm-scroller { scrollbar-gutter: stable }
       /* Look: separate rounded cards on a backdrop, pill tabs, borderless chrome (same layout as before) */
-      #app { padding: 0 8px; grid-template-rows: 30px auto auto auto auto minmax(0, 1fr) 32px; column-gap: 0; grid-template-columns: 0 var(--sbw, 260px) minmax(0, 1fr); background: rgb(var(--n200)) }
+      #app { padding: 0 8px; grid-template-rows: 30px auto auto auto auto minmax(0, 1fr) 32px; column-gap: 0; grid-template-columns: 0 max(220px, var(--sbw, 260px)) minmax(0, 1fr); background: rgb(var(--n200)) }
       #app.sbh { grid-template-columns: 0 0 minmax(0, 1fr) }
       .dark #app { background: rgb(var(--n950)) }
       #mb, #st, #ab { background: transparent; border: 0 }
@@ -93,12 +106,12 @@
       #rz { right: -8px; width: 8px; border-radius: 4px }
       #tr { height: 42px; background: rgb(var(--n50)); border: 1px solid rgb(var(--n300)); border-bottom: 0; border-radius: 12px 12px 0 0 }
       .dark #tr { background: rgb(var(--n900)); border-color: rgb(var(--n800)) }
-      #ed { margin: 0; background: rgb(var(--n50)); border: 1px solid rgb(var(--n300)); border-top: 0; border-radius: 0 0 12px 12px; overflow: hidden }
-      .dark #ed { background: rgb(var(--n900)); border-color: rgb(var(--n800)) }
+      #ed { margin: 0; background-color: rgb(var(--n50)); border: 1px solid rgb(var(--n300)); border-top: 0; border-radius: 0 0 12px 12px; overflow: hidden }
+      .dark #ed { background-color: rgb(var(--n900)); border-color: rgb(var(--n800)) }
       #tabs { gap: 4px; padding: 6px 8px }
       #tabs .tab { border: 0; border-radius: 8px; margin: 0; padding: 0 8px 0 12px }
-      #tabs .tab:hover { background: rgb(var(--n500) / .12) }
-      #tabs .tab.on, .dark #tabs .tab.on { background: rgb(var(--a500) / .16) }
+      #tabs .tab:hover { background-color: rgb(var(--n500) / .12) }
+      #tabs .tab.on, .dark #tabs .tab.on { background-color: rgb(var(--a500) / .16) }
       #tabs .tab.on::after { display: none }
       #sb .nc-on .ni { color: rgb(var(--a600)) }
       .dark #sb .nc-on .ni { color: rgb(var(--a400)) }
@@ -115,6 +128,14 @@
       /* sidebar content (note list, Settings) uses one text size */
       #nl, #sb .stg { font-size: 14px; line-height: 20px }
       #sb .stg .text-\[13px\], #sb .stg .text-sm { font-size: 14px }
+      /* narrow sidebar: compact rows, labels never wrap, size row wraps instead of clipping */
+      #sb .stg [role=switch], #sb .stg .szr { padding-left: 10px; padding-right: 10px; gap: 8px }
+      #sb .stg [role=switch] > .flex-1, #sb .stg .szr > .flex-1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0 }
+      #sb .stg .szr { flex-wrap: wrap; row-gap: 6px }
+      #sb .stg .szr > .flex-1 { flex-basis: 100% }
+      #sb .stg .szr button { padding: 5px 10px }
+      #sb .stg select { padding-left: 10px; padding-right: 28px; text-overflow: ellipsis }
+      #sb .stg svg.right-6 { right: 22px }
     }
   /* VS Code-style scrollbars (mouse devices only; phones keep the native overlay bar) */
   @media (hover:hover) and (pointer:fine){
@@ -123,7 +144,7 @@
     @keyframes shF{from{opacity:0}} @keyframes shU{from{transform:translateY(100%)}} @keyframes shP{from{opacity:0;transform:translateY(-10px) scale(.97)}}
     #sh{overflow:hidden;overscroll-behavior:contain} #sh.flex{animation:shF .2s ease-out} #sh.flex #sheet{animation:shU .3s cubic-bezier(.2,.8,.2,1)}
     #sh.out{animation:shF .18s ease-in reverse forwards} #sh.out #sheet{animation:shU .18s ease-in reverse forwards}
-    @media (min-width:900px){#sh.flex #sheet{animation:shP .18s cubic-bezier(.2,.8,.2,1)} #sh.out #sheet{animation:shP .12s ease-in reverse forwards}}
+    @media (min-width:600px){#sh.flex #sheet{animation:shP .18s cubic-bezier(.2,.8,.2,1)} #sh.out #sheet{animation:shP .12s ease-in reverse forwards}}
     @media (prefers-reduced-motion:reduce){#sh,#sh #sheet{animation:none!important}}
     #ed .cm-scroller::-webkit-scrollbar-thumb{background:rgb(var(--n500)/.3);border:3px solid transparent;background-clip:padding-box;border-radius:7px;min-height:40px;min-width:40px;transition:background-color .15s}
     #ed .cm-scroller:hover::-webkit-scrollbar-thumb{background-color:rgb(var(--n500)/.45)}
@@ -144,14 +165,14 @@
 .dark #ed .cm-content{caret-color:rgb(var(--a400))}
 #ed .cm-line{padding:0}
 #wl{color:rgb(var(--n500));font:var(--fs,17px)/1.6 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;padding:12px 18px;white-space:nowrap;user-select:none}#ed.sans #wl{font-family:inherit}#ed.cf #wl{font-family:var(--ff)}.dark #wl{color:rgb(var(--n400))}
-#ed .cm-gutters{background:rgb(var(--n50));z-index:2;border:0;border-right:1px solid rgb(var(--n300));color:rgb(var(--n400));padding-left:10px}
-.dark #ed .cm-gutters{background:rgb(var(--n900));border-color:rgb(var(--n600));color:rgb(var(--n500))}
+#ed .cm-gutters{background-color:rgb(var(--n50));z-index:2;border:0;border-right:1px solid rgb(var(--n300));color:rgb(var(--n400));padding-left:10px}
+.dark #ed .cm-gutters{background-color:rgb(var(--n900));border-color:rgb(var(--n600));color:rgb(var(--n500))}
 #ed .cm-lineNumbers .cm-gutterElement{padding:0 12px 0 4px}
 #ed.ro .cm-content{opacity:.5}
 #ed .cm-searchMatch{background:#fef08a;border-radius:3px}.dark #ed .cm-searchMatch{background:rgb(161 98 7/.6)}
 #ed .cm-searchMatch.cm-searchMatch-selected{background:#fdba74}.dark #ed .cm-searchMatch.cm-searchMatch-selected{background:rgb(234 88 12/.7)}
 #ed .cm-activeLine,#ed .cm-activeLineGutter{background:transparent}
-@media (min-width:900px){#ed .cm-activeLine{background:rgb(var(--n500)/.08)}}
+@media (min-width:600px){#ed .cm-activeLine{background:rgb(var(--n500)/.08)}}
 #ed .cm-activeLineGutter{color:rgb(var(--n700));font-weight:600}.dark #ed .cm-activeLineGutter{color:rgb(var(--n200))}
 </style>
 </head>
@@ -176,6 +197,8 @@
       <div id="rz" class="absolute inset-y-0 -right-1 z-10 w-2 cursor-col-resize hover:bg-violet-500/40"></div>
     </aside>
     <div id="top" class="flex h-12 shrink-0 items-center pl-3 pr-0 [#app.kb_&]:hidden">
+      <button id="hb" data-a="hb" aria-label="Menu" title="Menu" aria-haspopup="menu" aria-expanded="false"
+        class="-ml-1 mr-1 hidden size-9 shrink-0 place-items-center rounded-lg text-slate-500 hover:bg-slate-200 aria-expanded:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-700 dark:aria-expanded:bg-slate-700"><svg viewBox="0 0 24 24" class="size-5 fill-none stroke-current stroke-2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
       <img id="lg" src="assets/icon.svg" alt="" class="mr-1 hidden size-7 shrink-0">
       <button id="wsb" data-a="ws" aria-label="Choose folder"
         class="flex h-9 items-center gap-1.5 rounded-full pl-3 pr-2 text-sm font-medium text-slate-500 active:bg-slate-200 dark:text-slate-400 dark:active:bg-slate-700"></button>
@@ -220,7 +243,7 @@
       <button data-a="rpa" class="h-11 rounded-lg px-3 text-[13px] font-medium text-violet-600 active:bg-slate-100 dark:text-violet-400 dark:active:bg-slate-700">All</button>
     </div>
     <div id="ed" class="group relative mt-1 min-h-0 flex-1">
-      <div id="wl" class="pointer-events-none absolute inset-0 hidden overflow-hidden">Start typing</div>
+      <div id="wl" class="pointer-events-none absolute inset-0 hidden overflow-hidden">Start typing<small>Scratchpad notes are saved within rPad. Move this note to a folder to save it as a file.</small></div>
       <div id="cmh" class="absolute inset-0"></div>
       <div id="ct"
         class="pointer-events-none absolute bottom-2 right-3.5 [#app.kb_&]:hidden rounded-full bg-slate-50 px-2.5 py-0.5 text-xs text-slate-500 dark:bg-slate-900 dark:text-slate-400">
@@ -268,7 +291,7 @@
     const ed = Editor.create({
       parent: $("#cmh"),
       // text changed in tab `id`; the page keeps the text in S for saving
-      onText: (id, text) => { const t = S.tabs.find(x => x.id === id); if (!t) return; t.t = text; t.m = Date.now(); t === cur() ? typed(t) : keep() },
+      onText: (id, text) => { const t = S.tabs.find(x => x.id === id); if (!t) return; t.t = text; t.m = Date.now(); dSave(t); t === cur() ? typed(t) : keep() },
       onSelect: () => { wlR(); if (DK.matches) stR() },
       onFind: f => { $("#fc").textContent = !f.on ? "" : f.count ? `${f.index || "–"}/${f.count}${f.more ? "+" : ""}` : $("#fi").value ? "0" : "" }
     });
@@ -294,6 +317,8 @@
       esc = t => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
     document.querySelectorAll("[data-a]").forEach(b => { const m = { menu: "more", fp: "up", fn: "dn", find: b.closest("#fd") ? "x" : "find", star: "star", new: "plus", hist: "history", rpt: "swap" }[b.dataset.a]; if (m) b.innerHTML = ic(m) });
     const F = [{ n: "Scratchpad", p: "Documents/Scratchpad", ok: 1, c: "purple" }];
+    // where a folder lives, for display: disk folders show their real path; the others (like Scratchpad) are kept in rPad's own storage, not as files
+    const fLoc = f => f.d ? esc(f.p) : "Saved inside rPad";
     // folder color name -> Tailwind palette
     const COL = { grey: "slate", blue: "blue", red: "red", yellow: "amber", green: "green", pink: "pink", purple: "violet", cyan: "cyan", orange: "orange" };
     const cl = f => COL[f.c || "grey"], dot = f => `bg-${cl(f)}-500`, tx = f => `text-${cl(f)}-600 dark:text-${cl(f)}-400`,
@@ -335,7 +360,8 @@
       if (RT[r]) { OG = r === "folders" && F[+p] ? +p : -1; OM = OG >= 0 ? "t" : RT[r]; OQ = ""; ovS() }
       else { const i = S.tabs.findIndex(x => x.id === p); if (r === "note" && i >= 0) S.cur = i; swv(false); show(true) }
     }
-    const T = t => t.n || ((t.t.split("\n").find(x => x.trim()) || "").trim().slice(0, 26) || tName(t));
+    // a tab's title: the name you gave it, else its date (or Untitled). Never taken from the text, so typing doesn't change it.
+    const T = t => t.n || tName(t);
     // extension: t.x ("txt" if unset, "" for none). Every file is plain text whatever its extension; D() is the name shown to the user
     const ex = t => t.x ?? "txt", dx = t => ex(t) ? "." + ex(t) : "", D = t => T(t) + dx(t), full = t => t.n ? t.n + dx(t) : "",
       setN = (t, v) => { v = v.trim(); if (!v) { t.n = undefined; return } const m = v.match(/^(.+).([a-z0-9_+-]{1,10})$/i); if (m && /[a-z]/i.test(m[2])) { t.n = m[1]; t.x = m[2].toLowerCase() } else t.n = v };
@@ -344,7 +370,7 @@
       dShort = ms => { const d = new Date(ms), p = n => String(n).padStart(2, "0"); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}-${p(d.getMinutes())}-${p(d.getSeconds())}` };
     function tName(t) {
       const st = S.ts !== false, b = st ? dShort(cAt(t)) : "Untitled", all = [...S.tabs, ...S.closed], k = all.indexOf(t),
-        n = all.filter((x, j) => x !== t && !x.n && !x.t.trim() && (!st || dShort(cAt(x)) === b) && (cAt(x) < t.c || (cAt(x) === t.c && j < k))).length;
+        n = all.filter((x, j) => x !== t && !x.n && (!st || dShort(cAt(x)) === b) && (cAt(x) < t.c || (cAt(x) === t.c && j < k))).length;
       return n ? `${b} (${n + 1})` : b
     }
     // a file name every system accepts: no \ / : * ? " < > | or control characters, no trailing dot or space, no reserved Windows name
@@ -355,7 +381,7 @@
       applyPalette(S.pal);
       const d = S.theme === "dark" || (S.theme === "auto" && DQ.matches), tc = document.querySelectorAll("meta[name=theme-color]"); document.documentElement.classList.toggle("dark", d);
       // on desktop the window title bar matches the menu bar (slate-100 / slate-950)
-      const dk = matchMedia("(min-width:900px)").matches, L = paletteHex(S.pal, dk ? 100 : 50), D = paletteHex(S.pal, dk ? 950 : 900);
+      const dk = matchMedia("(min-width:600px)").matches, L = paletteHex(S.pal, dk ? 100 : 50), D = paletteHex(S.pal, dk ? 950 : 900);
       tc[0].content = S.theme === "dark" ? D : L; tc[1].content = S.theme === "light" ? L : D
     }
     DQ.addEventListener("change", () => { if (S.theme === "auto") theme() });
@@ -369,7 +395,7 @@
     }
     const undo = () => { if (!ed.readOnly && !ed.undo()) toast("Nothing to undo") }, redo = () => { if (!ed.readOnly && !ed.redo()) toast("Nothing to redo") };
     function banner(b, t) {
-      const f = F[t.f], B = { changed: ["File changed on disk", `Another app edited ${fileOf(t)}. Typing is paused until you choose.`, [["over", "Overwrite"], ["fetch", "Fetch changes"], ["later", "Cancel"]]], min: ["", "File changed on disk. Typing is paused.", [["review", "Review"]]], gone: ["File no longer exists", "Save to re-create it, or save a copy somewhere else.", [["save", "Save"], ["copy", "Save as…"]]], lock: ["Can’t save", "The file is locked or read-only. Your text is safe here.", [["copy", "Save as copy"]]], rec: ["", "Some changes were unsaved in your last session.", [["dismiss", "Got it"]]], off: ["Folder unavailable", `${f.n} isn’t connected. Edits are kept here and save when it returns.`, []] }[b], el = $("#bn");
+      const f = F[t.f], B = { changed: ["File changed on disk", `Another app edited ${esc(fileOf(t))}. Typing is paused until you choose.`, [["over", "Overwrite"], ["fetch", "Fetch changes"], ["later", "Cancel"]]], min: ["", "File changed on disk. Typing is paused.", [["review", "Review"]]], gone: ["File no longer exists", "Save to re-create it, or make a copy with a new name.", [["save", "Save"], ["dup", "Make a copy"]]], ro: ["Read-only", `rPad can’t write to ${esc(fileOf(t))}. To edit it, make a copy.`, [["dup", "Make a copy"], ["recheck", "Check again"]]], lock: ["Can’t save", `rPad can’t write to ${esc(fileOf(t))} any more. Your changes are safe here. Make a copy to keep them and continue editing.`, [["dup", "Make a copy"], ["recheck", "Try again"]]], rec: ["", "Some changes were unsaved in your last session.", [["dismiss", "Got it"]]], off: ["Folder unavailable", `${esc(f.n)} isn’t connected. Edits are kept here and save when it returns.`, []] }[b], el = $("#bn");
       el.style.display = B ? "block" : "none"; if (B) el.innerHTML = (B[0] ? `<b class="block font-semibold">${B[0]}</b>` : "") + `<div>${B[1]}</div>` + (B[2].length ? `<div class="mt-2 flex flex-wrap gap-1.5">${B[2].map(x => `<button class="h-9 rounded-lg bg-white px-3.5 text-[13.5px] font-medium text-slate-900 dark:bg-slate-800 dark:text-slate-100" data-a="bn" data-v="${x[0]}">${x[1]}</button>`).join("")}</div>` : "")
     }
     let FC = false; // find: match case
@@ -377,16 +403,16 @@
     const wc = s => { let n = 0, w = 0; for (let i = 0; i < s.length; i++) { const c = s.charCodeAt(i), sp = c <= 32 || c === 160 || (c >= 0x2000 && c <= 0x200a) || c === 0x2028 || c === 0x2029 || c === 0x202f || c === 0x205f || c === 0x3000 || c === 0xfeff; if (sp) w = 0; else if (!w) { w = 1; n++ } } return n };
     function show(reset) {
       ed.flush(); const t = cur(), b = F[t.f].ok ? t.b : "off"; if (reset) { ed.open(tid(t), t.t); ed.keepOnly(new Set(S.tabs.map(tid))) }
-      const ro = b === "changed" || b === "min";
+      const ro = b === "changed" || b === "min" || b === "ro" || b === "lock";
       ed.set({ readOnly: ro, wrap: S.wrap !== false, ln: !!S.ln, spellcheck: S.spell !== false, autocorrect: S.spell === false ? "off" : "on" });
-      $("#ed").classList.toggle("ro", ro); $("#ed").classList.toggle("sans", S.font === "sans"); { const cf = S.font && S.font !== "mono" && S.font !== "sans"; $("#ed").classList.toggle("cf", !!cf); if (cf) $("#ed").style.setProperty("--ff", '"' + S.font.replace(/"/g, "") + '", ui-monospace, monospace') } document.documentElement.style.setProperty("--fs", S.fs + "px"); ed.remeasure && ed.remeasure();
+      $("#ed").classList.toggle("ro", ro); $("#ed").classList.toggle("scr", !t.f);$("#ed").classList.toggle("sans", S.font === "sans"); { const cf = S.font && S.font !== "mono" && S.font !== "sans"; $("#ed").classList.toggle("cf", !!cf); if (cf) $("#ed").style.setProperty("--ff", '"' + S.font.replace(/"/g, "") + '", ui-monospace, monospace') } document.documentElement.style.setProperty("--fs", S.fs + "px"); ed.remeasure && ed.remeasure();
       $("#wsb").innerHTML = ic("fold", "size-[18px] stroke-[1.8] " + tx(F[t.f])) + `<span>${esc(F[t.f].n)}</span>` + ic("chev", "size-[18px] stroke-[1.8]");
-      $("#tabs").innerHTML = S.tabs.map((x, i) => `<button role="tab" aria-selected="${i === S.cur}" class="${TAB}${i === S.cur ? TON : TOFF}" data-a="tab" data-i="${i}" title="${esc(F[x.f].n)}"><span class="size-2 shrink-0 rounded-full ${dot(F[x.f])}"></span><span class="min-w-0 truncate py-1 leading-normal">${esc(D(x))}</span><span data-a="tcl" data-i="${i}" role="button" aria-label="Close tab" class="${i === S.cur ? "" : "invisible group-hover/t:visible "}-mr-1 grid size-5 shrink-0 place-items-center rounded text-slate-500 hover:bg-slate-200 active:bg-slate-300 dark:text-slate-400 dark:hover:bg-slate-700">${ic("x", "size-3.5 stroke-2")}</span></button>`).join("") +`<button data-a="new" aria-label="New tab" class="grid w-9 shrink-0 place-items-center rounded-lg text-slate-500 active:bg-slate-200/70 dark:text-slate-400 dark:active:bg-slate-700">${ic("plus", "size-5 stroke-[1.8]")}</button>`;
+      $("#tabs").innerHTML = S.tabs.map((x, i) => `<button role="tab" aria-selected="${i === S.cur}" class="${TAB}${i === S.cur ? TON : TOFF}${x.f ? "" : " scr"}" data-a="tab" data-i="${i}" title="${esc(F[x.f].n)}"><span class="size-2 shrink-0 rounded-full ${dot(F[x.f])}"></span><span class="min-w-0 truncate py-1 leading-normal">${esc(D(x))}</span><span data-a="tcl" data-i="${i}" role="button" aria-label="Close tab" class="${i === S.cur ? "" : "invisible group-hover/t:visible "}-mr-1 grid size-5 shrink-0 place-items-center rounded text-slate-500 hover:bg-slate-200 active:bg-slate-300 dark:text-slate-400 dark:hover:bg-slate-700">${ic("x", "size-3.5 stroke-2")}</span></button>`).join("") +`<button data-a="new" aria-label="New tab" class="grid w-9 shrink-0 place-items-center rounded-lg text-slate-500 active:bg-slate-200/70 dark:text-slate-400 dark:active:bg-slate-700">${ic("plus", "size-5 stroke-[1.8]")}</button>`;
       const a = $("#tabs .on"); if (a) $("#tabs").scrollLeft = a.offsetLeft - 70;
       banner(b, t); const w = WC = wc(t.t);
       $("#ct").textContent = `${w} word${w === 1 ? "" : "s"}, ${t.t.length} characters`; $("#gc").textContent = S.tabs.length;
       $("#star").className = "grid size-11 shrink-0 place-items-center rounded-xl active:bg-slate-200/70 dark:active:bg-slate-700 " + (t.s ? "text-amber-500" : "text-slate-500 dark:text-slate-400");
-      $("#star svg").classList.toggle("fill-current", !!t.s); wlR(t); sH(); shown = D(t); if (DK.matches) { mbR(); abR(); sbR(); stR() } keep()
+      $("#star svg").classList.toggle("fill-current", !!t.s); $("#star").setAttribute("aria-pressed", !!t.s); wlR(t); sH(); shown = D(t); if (DK.matches) { mbR(); abR(); sbR(); stR() } keep()
     }
     // the open tab's text changed in the editor: refresh what depends on the text; the whole page only when the tab's name changed
     let shown = "";
@@ -444,7 +470,7 @@
       $("#sw").innerHTML = (OG >= 0
         ? `<div class="flex items-center gap-1 px-2 pt-2"><button class="${IB}" data-a="om" data-v="g" aria-label="Back to folders">${ic("back")}</button><span class="text-slate-500 dark:text-slate-400">Folders /</span><span class="pointer-events-none ml-1 rounded-full px-3 py-1 text-sm font-medium ${pill(F[OG])}">${esc(F[OG].n)}</span></div>`
         : `<div class="flex items-center gap-1 px-2 pb-1 pt-2"><button class="${IB}" data-a="swx" aria-label="Back to note">${ic("back")}</button>${oqI("min-w-0 flex-1")}</div>`) + `
-${OG >= 0 ? `<div class="px-3.5 pb-1 pt-2">${oqI("w-full")}</div>` : ""}<div id="ol" class="min-h-0 flex-1 overflow-y-auto pb-24"></div>${OG >= 0 ? `<button data-a="new" class="absolute bottom-5 right-5 mb-[env(safe-area-inset-bottom)] flex items-center gap-2 rounded-2xl bg-violet-600 py-3.5 pl-4 pr-5 font-medium text-white shadow-lg active:bg-violet-700">${ic("plus")}New tab</button>` : `<div class="flex shrink-0 items-center justify-between border-t border-slate-200 bg-white px-2 py-2 min-[900px]:!hidden dark:border-slate-700 dark:bg-slate-800"><span class="w-11"></span><div class="flex rounded-full bg-slate-100 p-1 min-[900px]:!hidden dark:bg-slate-700">${seg("t", "tabs", "Open tabs")}${seg("g", "fold", "Folders")}${seg("s", "star", "Starred")}</div><button class="${IB}" data-a="new" aria-label="New tab">${ic("plus")}</button></div>`}`;
+${OG >= 0 ? `<div class="px-3.5 pb-1 pt-2">${oqI("w-full")}</div>` : ""}<div id="ol" class="min-h-0 flex-1 overflow-y-auto pb-24"></div>${OG >= 0 ? `<button data-a="new" class="absolute bottom-5 right-5 mb-[env(safe-area-inset-bottom)] flex items-center gap-2 rounded-2xl bg-violet-600 py-3.5 pl-4 pr-5 font-medium text-white shadow-lg active:bg-violet-700">${ic("plus")}New tab</button>` : `<div class="flex shrink-0 items-center justify-between border-t border-slate-200 bg-white px-2 py-2 min-[600px]:!hidden dark:border-slate-700 dark:bg-slate-800"><span class="w-11"></span><div class="flex rounded-full bg-slate-100 p-1 min-[600px]:!hidden dark:bg-slate-700">${seg("t", "tabs", "Open tabs")}${seg("g", "fold", "Folders")}${seg("s", "star", "Starred")}</div><button class="${IB}" data-a="new" aria-label="New tab">${ic("plus")}</button></div>`}`;
       $("#oq").oninput = e => { OQ = e.target.value; ovL() }; ovL()
     }
     function ovL() {
@@ -458,11 +484,11 @@ ${OG >= 0 ? `<div class="px-3.5 pb-1 pt-2">${oqI("w-full")}</div>` : ""}<div id=
         const rows = F.map((f, i) => [f, i]).filter(r => !q || r[0].n.toLowerCase().includes(q));
         $("#ol").innerHTML = `<div class="${CAP} !px-3.5">${rows.length} ${rows.length === 1 ? "folder" : "folders"}</div><div class="px-1.5">` + rows.map(([f, i]) => {
           const n = S.tabs.filter(x => x.f === i).length;
-          return `<div class="flex items-center"><button class="${RW} ${f.ok ? "" : "opacity-50"}" data-a="og" data-i="${i}"><span class="grid size-10 shrink-0 place-items-center rounded-xl ${pill(f)}">${ic("fold")}</span><span class="min-w-0 flex-1"><b class="font-medium">${esc(f.n)}</b><small class="${SM} truncate">${n} ${n === 1 ? "tab" : "tabs"} open · ${esc(f.p)}</small></span></button><button class="${IB}" data-a="fe" data-i="${i}" aria-label="Edit folder">${ic("edit")}</button></div>`
+          return `<div class="flex items-center"><button class="${RW} ${f.ok ? "" : "opacity-50"}" data-a="og" data-i="${i}"><span class="grid size-10 shrink-0 place-items-center rounded-xl ${pill(f)}">${ic("fold")}</span><span class="min-w-0 flex-1"><b class="font-medium">${esc(f.n)}</b><small class="${SM} truncate">${n} ${n === 1 ? "tab" : "tabs"} open · ${fLoc(f)}</small></span></button><button class="${IB}" data-a="fe" data-i="${i}" aria-label="Edit folder">${ic("edit")}</button></div>`
         }).join("") + `<button class="${RW} text-violet-600 dark:text-violet-400" data-a="nf">${ic("plus")}New folder</button></div>`
       }
     }
-    function wsS() { const t = cur(); sheet(`<h3 class="${H3}">Save this tab in</h3>${F.map((f, i) => `<div class="flex items-center"><button class="${RW} ${f.ok ? "" : "opacity-50"}" data-a="mv" data-i="${i}"><span class="${tx(f)}">${ic("fold")}</span><span class="flex-1">${esc(f.n)}<small class="${SM}">${f.ok ? esc(f.p) : "Not connected"}</small></span>${i === t.f ? ic("chk") : ""}</button>${f.ok ? `<button class="${PILL} shrink-0" data-a="nt" data-i="${i}">New tab here</button>` : ""}</div>`).join("")}<button class="${RW} text-violet-600 dark:text-violet-400" data-a="nf" data-v="mv">${ic("plus")}New folder…</button><div class="${CAP}">Closing a tab never deletes its file.</div>`) }
+    function wsS() { const t = cur(); sheet(`<h3 class="${H3}">Save this tab in</h3>${F.map((f, i) => `<div class="flex items-center"><button class="${RW} ${f.ok ? "" : "opacity-50"}" data-a="mv" data-i="${i}"><span class="${tx(f)}">${ic("fold")}</span><span class="flex-1">${esc(f.n)}<small class="${SM}">${f.ok ? fLoc(f) : "Not connected"}</small></span>${i === t.f ? ic("chk") : ""}</button>${f.ok ? `<button class="${PILL} shrink-0" data-a="nt" data-i="${i}">New tab here</button>` : ""}</div>`).join("")}<button class="${RW} text-violet-600 dark:text-violet-400" data-a="nf" data-v="mv">${ic("plus")}New folder…</button><div class="${CAP}">Closing a tab never deletes its file.</div>`) }
     function menuS() {
       const t = cur(); sheet(`<div class="flex gap-2 px-3 pb-1 pt-4"><label class="${INP} flex items-center focus-within:!border-violet-500 dark:focus-within:!border-violet-400"><input id="rn" class="min-w-0 flex-1 bg-transparent font-semibold outline-none placeholder:text-slate-700 dark:placeholder:text-slate-200" placeholder="${esc(D(t))}" aria-label="File name" value="${esc(full(t))}"></label><button class="${PILL}" data-a="ren">Rename</button></div><div class="${CAP} truncate pt-0">${esc(F[t.f].n)}/${fileOf(t)}</div>
 <div class="px-1">
@@ -501,13 +527,13 @@ ${OG >= 0 ? `<div class="px-3.5 pb-1 pt-2">${oqI("w-full")}</div>` : ""}<div id=
 ${LB("Theme")}<div class="px-3 pb-1"><div class="${SEG}">${["auto", "light", "dark"].map(k => `<button class="${segB(S.theme === k)}" aria-pressed="${S.theme === k}" data-a="th" data-v="${k}">${k[0].toUpperCase() + k.slice(1)}</button>`).join("")}</div></div>
 ${LB("Color", THEMES[pal].name)}<div class="flex gap-2 px-3 pb-1">${Object.keys(THEMES).map(k => { const on = pal === k; return `<button class="grid size-6 place-items-center rounded-full text-white ${on ? "ring-2 ring-slate-900 ring-offset-2 ring-offset-slate-50 dark:ring-slate-50 dark:ring-offset-slate-900" : ""}" title="${THEMES[k].name}" aria-label="${THEMES[k].name}" aria-pressed="${on}" data-a="pal" data-v="${k}" style="background:${accentHex(k, 500)}">${on ? ic("chk", "size-3.5 stroke-[3]") : ""}</button>`}).join("")}</div>
 ${DV}${HD("Text")}
-<div class="${RW}"><span class="flex-1">Size</span><button class="${PILL}" data-a="fs" data-d="-1" aria-label="Smaller">A−</button><b class="pfv w-8 text-center tabular-nums">${PF ?? S.fs}</b><button class="${PILL}" data-a="fs" data-d="1" aria-label="Larger">A+</button><button class="${PILL} ${PF != null && PF !== S.fs ? "!bg-violet-600 !text-white" : "opacity-40"}" data-a="fsa" ${PF != null && PF !== S.fs ? "" : "disabled"}>Apply</button></div>
+<div class="${RW} szr"><span class="flex-1">Size</span><button class="${PILL}" data-a="fs" data-d="-1" aria-label="Smaller">A−</button><b class="pfv w-8 text-center tabular-nums">${PF ?? S.fs}</b><button class="${PILL}" data-a="fs" data-d="1" aria-label="Larger">A+</button><button class="${PILL} ${PF != null && PF !== S.fs ? "!bg-violet-600 !text-white" : "opacity-40"}" data-a="fsa" ${PF != null && PF !== S.fs ? "" : "disabled"}>Apply</button></div>
 ${LB("Font")}<div class="relative px-3 pb-1">${fontSel()}<svg class="pointer-events-none absolute right-6 top-3 size-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
 ${DV}${HD("Editor")}
 ${[["wrap", "Word wrap", S.wrap !== false], ["ln", "Line numbers", !!S.ln], ["spell", "Spell check", S.spell !== false]].map(tg).join("")}
-<div class="min-[900px]:hidden">${DV}${HD("Header")}${tg(["logo", `App icon<small class="${SM}">Show the logo at the left of the top row (phone only)</small>`, !!S.logo])}</div>
+<div class="min-[600px]:hidden">${DV}${HD("Header")}${tg(["logo", `App icon<small class="${SM}">Show the logo at the left of the top row (phone only)</small>`, !!S.logo])}</div>
 ${DV}${HD("Files")}
-${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new files are called Untitled</small>`, S.ts !== false])}${tg(["ce", `Remove empty files<small class="${SM}">Unnamed files with no text are removed when closed and at start</small>`, S.ce !== false])}<div class="h-2"></div>`
+${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new files are called Untitled</small>`, S.ts !== false])}${tg(["ce", `Remove empty files<small class="${SM}">Unnamed files with no text are removed when closed and at start</small>`, S.ce !== false])}${DESK ? tg(["nt", `Show non-text files<small class="${SM}">Also list PDFs, images and other files in folders you open. They can’t be edited</small>`, !!S.nt]) : ""}<div class="h-2"></div>`
     }
     function setS() { sheet(`<h3 class="${H3}">Display settings</h3>${stgH()}`) }
     // Clean up: acts on the selection (line tools widen it to whole lines) or on the whole tab
@@ -524,31 +550,248 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
       const m = ed.cleanup(k, CU); toast(m || "Nothing to change", m ? undo : null)
     }
     let SC = "purple";
+    // Desktop (Tauri) only. A folder with f.d is a real folder on this PC: its files are listed from disk, open into tabs
+    // that carry t.fp (the file name) and save back as you type. Uses the official Tauri dialog + fs plugins (bundled as dist/tauri.js); the fs
+    // scope only ever contains folders picked in the native dialog, without their subfolders (persisted across runs by the persisted-scope plugin).
+    const TAU = window.TauriAPI, MAXB = 5 << 20;
+    // Platform comes from Tauri (os plugin): "windows", "android", "macos", "linux", "ios"; "web" in a browser.
+    // Use PL / DESK for platform features (disk folders, Show in folder, right-click, ☰). Media queries only pick the layout by window width.
+    const PL = TAU ? TAU.os.platform() : "web", DESK = ["windows", "macos", "linux"].includes(PL); document.documentElement.dataset.os = PL;
+    // the name must be a plain file name (no folder parts), so a path can never leave the picked folder
+    const dP = async (d, n) => { if (!n || n === "." || n === ".." || /[\\/:]/.test(n)) throw "Invalid file name"; return TAU.path.join(d, n) };
+    const dM = async p => (await TAU.fs.stat(p)).mtime?.getTime() ?? 0;
+    // looks like text we can open: no NUL byte and valid UTF-8 in the first 8 KB (a cut-off character at the end is fine)
+    async function dSniff(p) {
+      const h = await TAU.fs.open(p, { read: true });
+      try { const b = new Uint8Array(8192), n = (await h.read(b)) || 0; if (b.subarray(0, n).includes(0)) return false; try { new TextDecoder("utf-8", { fatal: true }).decode(b.subarray(0, n), { stream: true }); return true } catch { return false } } finally { await h.close() }
+    }
+    const dTC = new Map();
+    const CMD = {
+      pick_folder: async () => (await TAU.dialog.open({ directory: true, recursive: false, title: "Open folder" })) || null,
+      list_dir: async ({ dir }) => {
+        const es = (await TAU.fs.readDir(dir)).filter(e => e.isFile && !e.name.startsWith("."));
+        const v = await Promise.all(es.map(async e => {
+          const p = await dP(dir, e.name), st = await TAU.fs.stat(p), mtime = st.mtime?.getTime() ?? 0, key = p + "|" + mtime + "|" + st.size;
+          let text = dTC.get(key); if (text === undefined) { text = st.size <= MAXB && await dSniff(p).catch(() => false); dTC.set(key, text) }
+          return { name: e.name, mtime, size: st.size, text };
+        }));
+        return v.sort((a, b) => a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1);
+      },
+      read_text: async ({ dir, name }) => {
+        const p = await dP(dir, name); if ((await TAU.fs.stat(p)).size > MAXB) throw "big";
+        let text; try { text = new TextDecoder("utf-8", { fatal: true }).decode(await TAU.fs.readFile(p)) } catch { throw "binary" }
+        return { text, mtime: await dM(p) };
+      },
+      write_text: async ({ dir, name, text, createOnly }) => { const p = await dP(dir, name); if (createOnly && await TAU.fs.exists(p)) throw "exists"; await TAU.fs.writeTextFile(p, text); return dM(p) },
+      rename_file: async ({ dir, from, to }) => {
+        const a = await dP(dir, from), b = await dP(dir, to); if (a.toLowerCase() !== b.toLowerCase() && await TAU.fs.exists(b)) throw "exists";
+        await TAU.fs.rename(a, b); return dM(b)
+      },
+      delete_file: async ({ dir, name }) => TAU.fs.remove(await dP(dir, name)),
+    }, inv = (c, a) => CMD[c](a);
+    const DL = {}, DE = {}, dW = new Map(), dC = new Set(), dMv = new Set(); // DL: folder path -> files from the last scan; DE: scan error; dW: pending saves; dC: files being made; dMv: tabs being moved
+    const splitN = nm => { const m = nm.match(/^(.+)\.([a-z0-9_+-]{1,10})$/i); return m && /[a-z]/i.test(m[2]) ? [m[1], m[2].toLowerCase()] : [nm, ""] };
+    const dBase = p => p.split(/[\\/]/).filter(Boolean).pop() || p, dFix = s => s.replace(/\r\n?/g, "\n");
+    // text = the Rust side found it readable as UTF-8 text (any extension). Everything else is hidden unless Settings > Show non-text files is on.
+    const dVis = k => (DL[F[k].p] || []).filter(e => S.nt || e.text);
+    const dTabs = k => S.tabs.some(x => x.f === k && x.fp);
+    function dScan(k) {
+      const f = F[k]; if (!TAU || !f || !f.d) return Promise.resolve();
+      return inv("list_dir", { dir: f.p }).then(v => { DL[f.p] = v; DE[f.p] = "" }, e => { DL[f.p] = []; DE[f.p] = String(e) }).then(() => { const n = $("#nl"); if (n && DK.matches) n.innerHTML = nlR() })
+    }
+    function dSave(t) {
+      // A new tab is not a file yet: it has a temporary name only. Auto-save makes the file when the tab has text.
+      // An empty new tab is never saved by itself (only Save, Ctrl+S, makes it a file). A file that exists is always saved, also when you empty it.
+      const f = F[t.f]; if (!TAU || !f || !f.d || dMv.has(t)) return; // while moving, saving waits (the move saves after)
+      const nw = () => !t.fp && !t.t.trim(); clearTimeout(dW.get(t)); dW.delete(t); if (nw()) return; // text deleted again before the save: cancel it
+      dW.set(t, setTimeout(() => t.fp ? dWrite(t) : nw() ? dW.delete(t) : dCreate(t), 500))
+    }
+    function dWrite(t, force) {
+      clearTimeout(dW.get(t)); dW.delete(t); const f = F[t.f];
+      if (!t.fp || !f || !f.d || (t.b === "ro" || t.b === "lock" || (!force && (t.b === "changed" || t.b === "min")))) return Promise.resolve();
+      // a failed save means rPad lost write access: lock the tab and offer a copy (the "lock" banner); the text stays in rPad
+      // ds = the text that was written, not the text now: a change typed during the write stays unsaved, and its own timer saves it
+      const s = t.t;
+      return inv("write_text", { dir: f.p, name: t.fp, text: dOut(t), createOnly: false }).then(m => { t.mt = m; t.ds = s; if (t.b === "gone") t.b = null }, () => { t.b = "lock"; if (t === cur()) show(); else toast("Couldn’t save " + t.fp) })
+    }
+    const dOut = t => t.le === "\r\n" ? t.t.replace(/\n/g, "\r\n") : t.t;
+    // a new note in a disk folder becomes a file once it has text; its name is the one it already shows (or the date), made unique
+    // q: no error toast (the caller handles it). Returns true when the file was made.
+    async function dCreate(t, q) {
+      const f = F[t.f]; if (!f || !f.d || t.fp || dC.has(t)) return false; dC.add(t); clearTimeout(dW.get(t)); dW.delete(t);
+      const base = t.n || tName(t);
+      try {
+        for (let k = 1; k < 100; k++) {
+          const nm = fileOf({ ...t, n: base + (k > 1 ? ` (${k})` : "") }), s = t.t;
+          try { t.mt = await inv("write_text", { dir: f.p, name: nm, text: dOut(t), createOnly: true }); t.fp = nm; t.ds = s; [t.n, t.x] = splitN(nm); break } catch (e) { if (e !== "exists") throw e }
+        }
+        show(); dScan(t.f); return !!t.fp
+      } catch (e) { if (!q) toast("Couldn’t create the file"); return false }
+      // The text changed while the file was being made (typed more, or cleared): the file now exists, so save the new text (also empty) the normal way
+      finally { dC.delete(t); if (t.fp && t.t !== t.ds) dSave(t) }
+    }
+    // Make a copy (read-only, can't save, or deleted file): the tab becomes "<name> (copy)" in the same folder, editable.
+    // The original file is not changed. If the folder can't be written either, the text goes to a new Scratchpad note.
+    async function dDup(t) {
+      const fp = t.fp, n = t.n, b = t.b; t.fp = null; t.n = (n || tName(t)) + " (copy)"; t.b = null;
+      if (await dCreate(t, 1)) { show(true); return toast("Copy saved as " + t.fp) }
+      t.fp = fp; t.n = n; t.b = b;
+      S.tabs.push({ t: t.t, f: 0, n: (n || tName(t)) + " (copy)", x: t.x, m: Date.now() }); S.cur = S.tabs.length - 1; show(true);
+      toast("The folder is read-only too. The copy is in Scratchpad.")
+    }
+    function dRead(t) {
+      return inv("read_text", { dir: F[t.f].p, name: t.fp }).then(r => { t.le = /\r\n/.test(r.text) ? "\r\n" : "\n"; t.t = t.ds = dFix(r.text); t.mt = r.mtime; t.b = null })
+    }
+    // Show in folder: File Explorer opens with the file selected (official opener plugin; desktop only, so the option shows only in the Windows app)
+    // no name: the folder itself is shown (selected in its parent folder), like VS Code's "Reveal in File Explorer" on a folder
+    async function dRev(k, name) {
+      const f = F[k]; if (!TAU || !f || !f.d) return;
+      try { await TAU.opener.revealItemInDir(name ? await dP(f.p, name) : f.p) } catch { toast("Couldn’t open File Explorer") }
+    }
+    // Move to folder, with the official fs and dialog plugins.
+    //   disk -> disk:   fs.rename (Windows can't rename across drives, so there: fs.copyFile, then fs.remove)
+    //   rPad -> disk:   the file is made now in the new folder
+    //   disk -> rPad:   the text comes into rPad, then the file is deleted (asks first)
+    // A name already taken in the new folder: "Keep both" (the moved file gets " (2)"). No Replace: that could overwrite a file open in another tab.
+    // The new folder is gone: offer to create it again. Can't move (file in use, no permission): offer a copy; the original stays.
+    const dCode = e => +(String(e).match(/os error (\d+)/)?.[1] || 0);
+    const dWhy = e => { const s = String(e), c = dCode(e); return /forbidden|not allowed/i.test(s) ? "rPad no longer has access to that folder. Remove it from rPad and open it again." : c === 5 ? "Windows denied access." : c === 32 || c === 33 ? "Another app is using the file." : c === 39 || c === 112 ? "The drive is full." : c === 2 || c === 3 || c === 21 ? "The folder or drive isn’t there." : c === 206 ? "The path is too long." : "Windows reported an error." };
+    const dAsk = (m, ok) => TAU.dialog.ask(m, { title: "Move to folder", kind: "warning", okLabel: ok, cancelLabel: "Cancel" });
+    async function dFree(t, k) { // the tab's file name, or the first free "name (2).ext" in folder k
+      const f = F[k], base = t.n || tName(t);
+      for (let j = 1; j < 100; j++) { const nm = fileOf({ ...t, n: base + (j > 1 ? ` (${j})` : "") }); if (!await TAU.fs.exists(await dP(f.p, nm))) return nm }
+      throw "no free name"
+    }
+    async function dMove(t, k) {
+      const a = F[t.f], b = F[k]; if (!b || t.f === k) return;
+      if (!TAU || (!a.d && !b.d)) { t.f = k; dSave(t); afterTabs(); return toast(`Moved to ${b.n}`) }
+      if (t.b === "changed" || t.b === "min") return toast("This file was changed in another app. Choose which version to keep first.");
+      if (dMv.has(t)) return; dMv.add(t);
+      try {
+        if (dC.has(t)) return toast("Still saving. Try again in a moment.");
+        if (t.fp) await dWrite(t); // save pending typing to the old place first
+        else { clearTimeout(dW.get(t)); dW.delete(t); if (!b.d || !t.t.trim()) { t.f = k; afterTabs(); return toast(`Moved to ${b.n}`) } } // no file yet: nothing on disk to move
+        if (!b.d) { // disk -> rPad
+          if (!await dAsk(`Move ${t.fp} into rPad? The text is kept in ${b.n} and the file is deleted from ${a.p}.`, "Move")) return;
+          const fp = t.fp, fk = t.f; t.f = k; t.fp = null; t.b = null; t.mt = 0; afterTabs();
+          try { await TAU.fs.remove(await dP(a.p, fp)); toast(`Moved to ${b.n}`) } catch (e) { if (dCode(e) === 2) toast(`Moved to ${b.n}`); else toast(`Copied to ${b.n}. Couldn’t delete ${fp}: ${dWhy(e)}`) }
+          return dScan(fk)
+        }
+        // the new folder must exist: offer to create it again (fails if the drive is gone)
+        if (!await TAU.fs.exists(b.p)) {
+          if (!await dAsk(`The folder ${b.p} no longer exists. Create it again?`, "Create folder")) return;
+          try { await TAU.fs.mkdir(b.p) } catch (e) { return toast("Couldn’t create the folder. " + dWhy(e)) }
+        }
+        let nm = fileOf(t);
+        if (await TAU.fs.exists(await dP(b.p, nm))) {
+          const alt = await dFree(t, k);
+          if (!await dAsk(`${b.n} already has a file named ${nm}. Keep both? The moved file will be named ${alt}.`, "Keep both")) return;
+          nm = alt
+        }
+        const to = await dP(b.p, nm), put = () => TAU.fs.writeTextFile(to, dOut(t)).then(() => { t.ds = t.t }, e => { throw { w: dWhy(e) } });
+        let msg = `Moved to ${b.n} as ${nm}`;
+        if (!t.fp || t.b === "gone") await put(); // rPad -> disk, or the old file is gone: write the text as a new file
+        else {
+          const from = await dP(a.p, t.fp);
+          try { await TAU.fs.rename(from, to) } catch (e) {
+            if (dCode(e) === 17) { // another drive: copy, then delete the original
+              try { await TAU.fs.copyFile(from, to) } catch (e2) { throw { w: dWhy(e2) } }
+              await TAU.fs.remove(from).catch(e3 => { msg = `Copied to ${b.n}. Couldn’t delete the original: ${dWhy(e3)}` })
+            } else {
+              if (!await dAsk(`Can’t move ${t.fp}. ${dWhy(e)} Copy it to ${b.n} instead? The original stays in ${a.n}.`, "Copy")) return;
+              await put(); msg = `Copied to ${b.n} as ${nm}. The original stays in ${a.n}.`
+            }
+          }
+        }
+        // update our record: the tab now points at the file in the new folder. Unsaved changes (t.t ≠ t.ds) are saved there next (finally).
+        const fk = t.f; t.f = k; [t.n, t.x] = splitN(nm); t.fp = nm; t.b = null; t.mt = await dM(to).catch(() => 0);
+        afterTabs(); if (a.d) dScan(fk); dScan(k); toast(msg)
+      } catch (e) { toast(e?.w ? `Couldn’t write to ${b.n}. ${e.w}` : "Couldn’t move the file. " + dWhy(e)) }
+      finally { dMv.delete(t); if (!t.fp || t.t !== t.ds) dSave(t) }
+    }
+    const dErr = e => toast(e === "binary" ? "That isn’t a text file" : e === "big" ? "That file is too large (over 5 MB)" : "Couldn’t open the file");
+    function dOpen(k, name) {
+      const i = S.tabs.findIndex(x => x.f === k && x.fp === name); if (i >= 0) { setH("#note-" + tid(S.tabs[i])); return render() }
+      const t = { t: "", f: k, fp: name }; [t.n, t.x] = splitN(name);
+      dRead(t).then(() => { S.tabs.push(t); setH("#note-" + tid(t)); render() }, dErr)
+    }
+    // the window got focus: pick up files added, removed or edited by other apps
+    let dBusy = 0;
+    async function dSync() {
+      if (!TAU || dBusy) return; dBusy = 1;
+      try {
+        const ks = F.map((f, k) => k).filter(k => F[k].d && (k === SF || dTabs(k))); for (const k of ks) await dScan(k);
+        for (const t of S.tabs) await dChk(t, 1);
+        show(true)
+      } finally { dBusy = 0 }
+    }
+    // check one disk tab against its file: gone, can't write, edited elsewhere, or fine.
+    // Can't write: "ro" (no unsaved changes, the file was read-only) or "lock" (unsaved changes, rPad lost access). Both offer a copy.
+    // Writable = the Read-only setting is off and the file opens for writing (catches Windows permissions and other apps' locks; opening changes nothing).
+    // Runs when you switch to the tab and when the window gets focus. q: don't redraw (dSync redraws once at the end).
+    async function dChk(t, q) {
+      const f = F[t.f]; if (!TAU || !t.fp || !f || !f.d || dW.has(t) || dMv.has(t)) return;
+      const b0 = t.b, t0 = t.t; let st = null, ok = true;
+      try {
+        const p = await dP(f.p, t.fp);
+        if (await TAU.fs.exists(p)) { st = await TAU.fs.stat(p); if (st.readonly) ok = false; else await (await TAU.fs.open(p, { write: true })).close() }
+      } catch { ok = false }
+      if (!ok) t.b = t.b === "lock" || t.t !== t.ds ? "lock" : "ro";
+      else if (!st) t.b = "gone";
+      else {
+        const was = t.b; if (was === "ro" || was === "lock" || was === "gone") t.b = null;
+        const mt = st.mtime?.getTime() ?? 0;
+        if (mt !== t.mt) { if (t.t === t.ds) await dRead(t).catch(() => 0); else if (t.b !== "min") t.b = "changed" }
+        else if (was === "lock" && t.t !== t.ds) dWrite(t) // access is back: save the kept changes
+      }
+      if (!q && t === cur() && (t.b !== b0 || t.t !== t0)) show(true)
+    }
+    addEventListener("focus", dSync); addEventListener("pagehide", () => [...dW.keys()].forEach(t => t.fp ? dWrite(t) : dCreate(t)));
+    // Open folder: native dialog, then the folder joins the Library and is selected
+    function dAdd(mv) {
+      inv("pick_folder").then(p => {
+        if (!p) return; let k = F.findIndex(f => f.d && f.p.toLowerCase() === p.toLowerCase());
+        if (k < 0) { const cs = Object.keys(COL); F.push({ n: dBase(p), p, ok: 1, c: cs[(F.length * 3) % cs.length], d: 1 }); k = F.length - 1 }
+        if (mv) dMove(cur(), k);
+        SF = k; S.sbh = 0; S.sp = "e"; app.classList.remove("sbh"); close(); keep(); show(); dScan(k)
+      }, () => toast("Couldn’t open the folder picker"))
+    }
     function fSheet(fi, mv) {
       const f = fi >= 0 ? F[fi] : null; SC = f ? f.c : "purple";
       sheet(`<h3 class="${H3}">${f ? "Edit folder" : "New folder"}</h3><div class="flex px-3 py-1.5"><input id="fn" class="${INP}" placeholder="Folder name" value="${f ? esc(f.n) : ""}"></div>
 <div class="flex flex-wrap gap-3 px-3 py-3">${Object.keys(COL).map(k => `<button class="swc grid size-9 place-items-center rounded-full text-white bg-${COL[k]}-500" data-a="pc" data-v="${k}" aria-label="${k}">${k === SC ? ic("chk", "size-[17px] stroke-[3]") : ""}</button>`).join("")}</div>
-<button class="${PB}" data-a="fsave" data-i="${fi}" data-v="${mv ? "mv" : ""}">${f ? "Save" : "Create folder"}</button>${f && F.length > 1 ? `<button class="${RW} mt-2 justify-center text-red-600 dark:text-red-400" data-a="fdel" data-i="${fi}">Delete folder</button>` : ""}`)
+<button class="${PB}" data-a="fsave" data-i="${fi}" data-v="${mv ? "mv" : ""}">${f ? "Save" : "Create folder"}</button>${f && F.length > 1 ? `<button class="${RW} mt-2 justify-center text-red-600 dark:text-red-400" data-a="fdel" data-i="${fi}">${f.d ? "Remove from rPad" : "Delete folder"}</button>` : ""}`)
     }
     function histS() {
       sheet(`<h3 class="${H3}">History</h3>` + (S.closed.length ? `<button class="${RW} justify-center font-medium text-red-600 dark:text-red-400" data-a="hclr">Clear all</button>` + S.closed.map((x, i) => !x.t.trim() ? "" : `<div class="flex items-center rounded-xl active:bg-slate-100 dark:active:bg-slate-700"><button class="flex min-w-0 flex-1 items-center gap-3 px-3 py-3 text-left" data-a="hopen" data-i="${i}"><span class="min-w-0 flex-1"><b class="block truncate font-medium">${esc(D(x))}</b><small class="${SM}">${esc(F[x.f].n)}</small></span><span class="text-xs text-slate-400">${x.d || ""}</span></button><button class="${IBS} mr-1" data-a="hdel" data-i="${i}" aria-label="Remove from History" title="Remove from History">${ic("x", "size-[18px] stroke-[1.8]")}</button></div>`).join("") : `<div class="${CAP}">No closed tabs yet.</div>`))
     }
     function add(f) { S.tabs.push({ t: "", f: f == null ? cur().f : f }); S.cur = S.tabs.length - 1; close(); swv(false); show(true); ed.focus() }
+    // renaming a note from a disk folder renames its file
+    function rnT(t, v) {
+      const f = F[t.f]; if (!t.fp || !f || !f.d) return setN(t, v);
+      const o = [t.n, t.x]; setN(t, v); if (!t.n) { [t.n, t.x] = o; return } const nm = fileOf(t); if (nm === t.fp) return;
+      dWrite(t).then(() => inv("rename_file", { dir: f.p, from: t.fp, to: nm })).then(m => { t.fp = nm; t.mt = m; dScan(t.f); show() }, e => { [t.n, t.x] = o; show(); toast(e === "exists" ? "A file with that name already exists" : "Couldn’t rename the file") })
+    }
     const afterTabs = () => app.classList.contains("insw") ? (show(true), ovS()) : show(true);
     function closeT(i) {
       // the file stays in its folder (as a closed tab); an empty file you never named is discarded
-      const x = S.tabs[i], nm = fileOf(x), fo = F[x.f].n, kp = keepX(x); S.tabs.splice(i, 1); if (kp) S.closed.unshift({ ...x, d: "Just now" });
+      const x = S.tabs[i], nm = fileOf(x), fo = F[x.f].n, kp = keepX(x); S.tabs.splice(i, 1); if (kp && !x.fp) S.closed.unshift({ ...x, d: "Just now" });
       if (!S.tabs.length) S.tabs.push({ t: "", f: 0 }); if (i <= S.cur && S.cur > 0) S.cur--;
       close(); afterTabs(); if (kp) toast(`Closed. ${nm} stays in ${fo}.`)
     }
     // Close only hides a tab (it goes to History); Delete removes the text for good, with Undo in the toast
-    function delT(i) {
+    async function delT(i) {
+      const y = S.tabs[i]; if (y && y.fp && !(await TAU.dialog.ask(`Permanently delete ${y.fp} from your PC? This can’t be undone.`, { title: "Delete file", kind: "warning", okLabel: "Delete", cancelLabel: "Cancel" }))) return close();
       const x = S.tabs.splice(i, 1)[0], c = S.cur, nm = fileOf(x);
       if (!S.tabs.length) S.tabs.push({ t: "", f: 0 }); if (i <= S.cur && S.cur > 0) S.cur--;
+      if (x.fp) {
+        const f = F[x.f];
+        close(); afterTabs(); return inv("delete_file", { dir: f.p, name: x.fp }).then(() => { toast(`Deleted ${nm}`); dScan(x.f) }, () => { S.tabs.splice(i, 0, x); S.cur = c; afterTabs(); toast("Couldn’t delete the file") })
+      }
       close(); afterTabs(); toast(`Deleted ${nm}`, () => { S.tabs.splice(i, 0, x); S.cur = c; afterTabs() })
     }
     function closeMany(keepIdx) {
-      const k = S.tabs[keepIdx]; S.tabs.forEach(x => { if (x !== k && keepX(x)) S.closed.unshift({ ...x, d: "Just now" }) });
+      const k = S.tabs[keepIdx]; S.tabs.forEach(x => { if (x !== k && keepX(x) && !x.fp) S.closed.unshift({ ...x, d: "Just now" }) });
       S.tabs = k ? [k] : [{ t: "", f: 0 }]; S.cur = 0; close(); afterTabs(); toast(k ? "Closed other tabs" : "Closed all tabs")
     }
     function tabS(i) {
@@ -561,9 +804,16 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
 <button class="${RW} text-red-600 dark:text-red-400" data-a="del" data-i="${i}">${ic("x")}<span>Delete file</span></button>
 <button class="${RW}" data-a="tcl" data-i="${i}">${ic("x")}<span>Close tab</span></button>`)
     }
-    function tmvS(i) {
-      const x = S.tabs[i];
-      sheet(`<h3 class="${H3}">Move to folder</h3>${F.map((f, k) => `<button class="${RW} ${f.ok ? "" : "opacity-50"}" data-a="tf" data-i="${i}" data-v="${k}"><span class="grid size-10 shrink-0 place-items-center rounded-xl ${pill(f)}">${ic("fold")}</span><span class="flex-1">${esc(f.n)}<small class="${SM}">${f.ok ? esc(f.p) : "Not connected"}</small></span>${k === x.f ? ic("chk") : ""}</button>`).join("")}`)
+    // One row per folder for a folder sheet. at(k) gives the data attributes of the row button; the row of folder "sel" gets a check mark.
+    const fPick = (h, at, sel) => sheet(`<h3 class="${H3}">${h}</h3>${F.map((f, k) => `<button class="${RW} ${f.ok ? "" : "opacity-50"}" ${at(k)}><span class="grid size-10 shrink-0 place-items-center rounded-xl ${pill(f)}">${ic("fold")}</span><span class="flex-1">${esc(f.n)}<small class="${SM}">${f.ok ? fLoc(f) : "Not connected"}</small></span>${k === sel ? ic("chk") : ""}</button>`).join("")}`);
+    function tmvS(i) { fPick("Move to folder", k => `data-a="tf" data-i="${i}" data-v="${k}"`, S.tabs[i].f) }
+    // New note, for all apps. The folder only tells where the file goes when it gets text or is saved (see dSave).
+    // ntAsk (Ctrl+N, Ctrl+Alt+N, File > New note…): always ask in which folder. With only one folder there is nothing to ask.
+    function ntAsk() { if (F.length < 2) return add(0); fPick("New note in", j => `data-a="nt" data-i="${j}"`, cur() ? cur().f : 0) }
+    // newNote ("+" buttons): if a folder is already chosen (k, the switcher's folder group, or the folder open in the visible sidebar), use it; else ask.
+    function newNote(k) {
+      if (!(k >= 0)) k = app.classList.contains("insw") && OG >= 0 ? OG : DK.matches && !S.sbh ? SF : -1;
+      k >= 0 ? add(k) : ntAsk()
     }
     function fnd() {
       const d = $("#fd"), on = d.style.display !== "flex"; d.style.display = on ? "flex" : "none"; app.classList.toggle("fo", on);
@@ -576,13 +826,13 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
     $("#ri").onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); $("[data-a=rp1]").click() } else if (e.key === "Escape") fnd() };
     const step = d => d < 0 ? ed.find.prev() : ed.find.next();
     $("#tb").onmousedown = e => e.preventDefault();
-    const BN = { over: () => toast("Your text replaced the file"), fetch: () => toast("Loaded the version from disk"), later: () => { cur().b = "min"; return 1 }, review: () => { cur().b = "changed"; return 1 }, save: () => toast("File re-created"), copy: () => toast("Saved a copy"), dismiss: () => 0 };
+    const BN = { over: () => { const t = cur(); if (!t.fp) return toast("Your text replaced the file"); t.b = null; dWrite(t, true).then(() => toast("Your text replaced the file")) }, fetch: () => { const t = cur(); if (!t.fp) return toast("Loaded the version from disk"); dRead(t).then(() => { show(true); toast("Loaded the version from disk") }, () => toast("Couldn’t read the file")) }, later: () => { cur().b = "min"; return 1 }, review: () => { cur().b = "changed"; return 1 }, save: () => { const t = cur(); if (!t.fp) return toast("File re-created"); t.b = null; dWrite(t, true).then(() => { dScan(t.f); toast("File re-created") }) }, dup: () => { dDup(cur()); return 1 }, recheck: () => { const t = cur(); dChk(t).then(() => { if (t.b === "ro") toast("Still read-only"); else if (t.b === "lock") toast("Still can’t save") }); return 1 }, dismiss: () => 0 };
     document.addEventListener("click", e => {
       if (lpSup) { lpSup = false; return }
       const b = e.target.closest("[data-a]"); if (!b) { if (e.target.id === "sh") close(); return }
       const a = b.dataset.a, i = +b.dataset.i, v = b.dataset.v, t = cur();
       const A = {
-        tab: () => { S.cur = i; show(true) }, new: () => add(app.classList.contains("insw") && OG >= 0 ? OG : null), hist: histS, hclr: () => { if (b.dataset.ok !== "1") { b.dataset.ok = "1"; b.textContent = "Tap again to clear all"; return } S.closed = []; shOpen() ? (keep(), histS()) : show() }, hdel: () => { S.closed.splice(i, 1); shOpen() ? (keep(), histS()) : show() }, hopen: () => { const { d: _, ...d } = S.closed.splice(i, 1)[0]; S.tabs.push(d); S.cur = S.tabs.length - 1; close(); show(true) }, grid: () => go("#tabs"), ws: wsS, menu: () => { if (!DK.matches) return menuS(); const r = b.getBoundingClientRect(); setTimeout(() => cxOpen(S.cur, r.right - 190, r.bottom + 2)) }, tcu: () => { S.cur = i; show(true); cuS() }, ecopy: () => navigator.clipboard.writeText(ed.selText()).then(() => toast("Copied"), () => toast("Couldn’t copy")),
+        tab: () => { S.cur = i; show(true); dChk(cur()) }, new: () => newNote(i), nta: ntAsk, hist: histS, hclr: () => { if (b.dataset.ok !== "1") { b.dataset.ok = "1"; b.textContent = "Tap again to clear all"; return } S.closed = []; shOpen() ? (keep(), histS()) : show() }, hdel: () => { S.closed.splice(i, 1); shOpen() ? (keep(), histS()) : show() }, hopen: () => { const { d: _, ...d } = S.closed.splice(i, 1)[0]; S.tabs.push(d); S.cur = S.tabs.length - 1; close(); show(true) }, grid: () => go("#tabs"), ws: wsS, menu: () => { if (!DK.matches) return menuS(); const r = b.getBoundingClientRect(); setTimeout(() => cxOpen(S.cur, r.right - 190, r.bottom + 2)) }, tcu: () => { S.cur = i; show(true); cuS() }, ecopy: () => navigator.clipboard.writeText(ed.selText()).then(() => toast("Copied"), () => toast("Couldn’t copy")),
         ecut: () => { const x = ed.selText(); navigator.clipboard.writeText(x).then(() => ed.replaceSel(""), () => toast("Couldn’t cut")) },
         epaste: () => navigator.clipboard.readText().then(x => x && ed.replaceSel(x), () => toast("Couldn’t read the clipboard")), set: () => { if (DK.matches) { S.sbh = 0; S.sp = "g"; app.classList.remove("sbh"); show() } else setS() }, find: fnd, fp: () => step(-1), fn: () => step(1),
         rpt: () => { const r = $("#rp"); r.style.display = r.style.display === "flex" ? "none" : "flex"; if (r.style.display === "flex") $("#ri").focus() },
@@ -590,14 +840,14 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
         rpa: () => { ed.find.set({ replace: $("#ri").value }); const n = ed.find.replaceAll(); if (n) toast(`Replaced ${n}`, undo) },
         fcs: () => { FC = !FC; b.setAttribute("aria-pressed", FC); ed.find.set({ cs: FC }, true) },
         ovo: () => { setH("#note-" + tid(S.tabs[i])); render() },
-        nf: () => fSheet(-1, v === "mv"), fe: () => fSheet(i),
+        nf: () => DESK ? dAdd(v === "mv") : fSheet(-1, v === "mv"), dopen: () => dOpen(SF, v), rev: () => isNaN(i) ? dRev(SF, v) : dRev(S.tabs[i].f, S.tabs[i].fp), revf: () => dRev(i), dref: () => dScan(SF), fe: () => fSheet(i),
         star: () => { t.s = !t.s; show(); toast(t.s ? "Starred" : "Unstarred") },
         om: () => go("#" + { t: "tabs", g: "folders", s: "starred" }[v]), og: () => go(i >= 0 ? "#folders-" + i : "#tabs"),
         swx: () => { setH("#note-" + tid(cur())); render() },
-        trn: () => { setN(S.tabs[i], $("#rn").value); close(); afterTabs(); toast("Renamed") },
+        trn: () => { rnT(S.tabs[i], $("#rn").value); close(); afterTabs(); toast("Renamed") },
         tstar: () => { const x = S.tabs[i]; x.s = !x.s; close(); afterTabs(); toast(x.s ? "Starred" : "Unstarred") },
-        tmv: () => tmvS(i), tf: () => { S.tabs[i].f = +v; close(); afterTabs(); toast(`Moved to ${F[+v].n}`) },
-        tdup: () => { const x = S.tabs[i]; S.tabs.splice(i + 1, 0, { t: x.t, f: x.f, n: x.n && x.n + " copy", x: x.x }); if (S.cur > i) S.cur++; close(); afterTabs(); toast("Duplicated") },
+        tmv: () => tmvS(i), tf: () => { close(); if (!F[+v].ok) return toast(`${F[+v].n} isn’t connected`); dMove(S.tabs[i], +v) },
+        tdup: () => { const x = S.tabs[i]; S.tabs.splice(i + 1, 0, { t: x.t, f: x.f, n: x.n && x.n + " copy", x: x.x }); if (S.cur > i) S.cur++; dSave(S.tabs[i + 1]); close(); afterTabs(); toast("Duplicated") },
         tnew: () => { const h = "#note-" + tid(S.tabs[i]); close(); flush(); window.open(location.href.split("#")[0] + h, "_blank") },
         tcopy: () => { close(); (navigator.clipboard ? navigator.clipboard.writeText(S.tabs[i].t) : Promise.reject()).then(() => toast("Copied"), () => toast("Couldn’t copy")) },
         tdl: () => { const t = S.tabs[i]; if (t) { dlF(fileOf(t), t.t); toast(`Downloaded ${fileOf(t)}`) } },
@@ -613,19 +863,24 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
           close(); render(); toast(i >= 0 ? "Folder updated" : "Folder created")
         },
         fdel: () => {
-          const to = i ? 0 : 1; if (b.dataset.ok !== "1") { b.dataset.ok = "1"; b.textContent = `Tap again to delete. Its tabs move to ${F[to].n}.`; return }
-          const n = F[i].n; [...S.tabs, ...S.closed].forEach(x => { if (x.f === i) x.f = to; if (x.f > i) x.f-- }); F.splice(i, 1);
-          close(); if (/^#folders-/.test(location.hash)) setH("#folders"); render(); toast(`Deleted folder ${n}`)
+          const to = i ? 0 : 1; if (b.dataset.ok !== "1") { b.dataset.ok = "1"; b.textContent = F[i].d ? "Tap again to remove. Files stay on disk." : `Tap again to delete. Its tabs move to ${F[to].n}.`; return }
+          const n = F[i].n, dk = F[i].d; if (dk) { const c = cur(), fp = F[i].p;
+            // finish pending saves now, while F[i] still points at this folder (a later timer would see shifted folder numbers)
+            S.tabs.forEach(x => { if (x.f === i && dW.has(x)) { if (x.fp) dWrite(x); else { clearTimeout(dW.get(x)); dW.delete(x) } } });
+            S.tabs = S.tabs.filter(x => !(x.f === i && x.fp)); S.closed = S.closed.filter(x => !(x.f === i && x.fp)); if (!S.tabs.length) S.tabs.push({ t: "", f: to }); S.cur = Math.max(0, S.tabs.indexOf(c)); SF = -1;
+            // forget the folder completely: its path, file list, scan error and text-check cache (only notes typed in rPad are kept, moved to another folder)
+            delete DL[fp]; delete DE[fp]; for (const k of dTC.keys()) if (k.startsWith(fp)) dTC.delete(k) } [...S.tabs, ...S.closed].forEach(x => { if (x.f === i) x.f = to; if (x.f > i) x.f-- }); F.splice(i, 1);
+          close(); if (/^#folders-/.test(location.hash)) setH("#folders"); render(); flush(); toast(dk ? `Removed ${n} from rPad. Files stay on disk.` : `Deleted folder ${n}`)
         },
         ovx: () => closeT(i),
-        mv: () => { if (!F[i].ok) return; t.f = i; close(); show(); toast(`Saved in ${F[i].n}`) }, nt: () => add(i),
+        mv: () => { if (!F[i].ok) return; if (t.fp && t.f !== i) { close(); return toast("Files from a disk folder stay in that folder") } t.f = i; dSave(t); close(); show(); toast(`Saved in ${F[i].n}`) }, nt: () => { if (!F[i].ok) return toast(`${F[i].n} isn’t connected`); add(i) },
         top: () => { S.top = !S.top; applyTop(); keep() },
-        fs: () => { PF = Math.max(6, Math.min(24, (PF ?? S.fs) + +b.dataset.d)); const on = PF !== S.fs; document.querySelectorAll(".pfv").forEach(e => e.textContent = PF); document.querySelectorAll("[data-a=fsa]").forEach(e => { e.disabled = !on; e.classList.toggle("opacity-40", !on); e.classList.toggle("!bg-violet-600", on); e.classList.toggle("!text-white", on) }) }, fsa: () => { S.fs = PF; PF = null; rf() }, tg: () => { if (v === "wrap") S.wrap = S.wrap === false; else if (v === "ts") S.ts = S.ts === false; else if (v === "spell") S.spell = S.spell === false; else if (v === "ce") S.ce = S.ce === false; else if (v === "logo") { S.logo = !S.logo; applyTop() } else S.ln = !S.ln; show(); if (shOpen()) setS() }, pal: () => { S.pal = v; theme(); show(); if (shOpen()) setS() }, th: () => { S.theme = v; theme(); show(); if (shOpen()) setS() }, ff: () => { S.font = v; show(); if (shOpen()) setS() },
+        fs: () => { PF = Math.max(6, Math.min(24, (PF ?? S.fs) + +b.dataset.d)); const on = PF !== S.fs; document.querySelectorAll(".pfv").forEach(e => e.textContent = PF); document.querySelectorAll("[data-a=fsa]").forEach(e => { e.disabled = !on; e.classList.toggle("opacity-40", !on); e.classList.toggle("!bg-violet-600", on); e.classList.toggle("!text-white", on) }) }, fsa: () => { S.fs = PF; PF = null; rf() }, tg: () => { if (v === "wrap") S.wrap = S.wrap === false; else if (v === "ts") S.ts = S.ts === false; else if (v === "spell") S.spell = S.spell === false; else if (v === "ce") S.ce = S.ce === false; else if (v === "nt") S.nt = !S.nt; else if (v === "logo") { S.logo = !S.logo; applyTop() } else S.ln = !S.ln; show(); if (shOpen()) setS() }, pal: () => { S.pal = v; theme(); show(); if (shOpen()) setS() }, th: () => { S.theme = v; theme(); show(); if (shOpen()) setS() }, ff: () => { S.font = v; show(); if (shOpen()) setS() },
         thc: () => { S.theme = { auto: "light", light: "dark", dark: "auto" }[S.theme] || "auto"; theme(); show() },
         ap: () => { if (!S.sbh && (S.sp || "e") === v) S.sbh = 1; else { S.sbh = 0; S.sp = v } app.classList.toggle("sbh", !!S.sbh); show(); if (!S.sbh && v === "s") $("#sq").focus() },
-        sf: () => { SF = i; SFO = 0; SSM = 0; show() }, sfm: () => { SFO = !SFO; SSM = 0; show() }, ssm: () => { SSM = !SSM; SFO = 0; show() }, ss: () => { S.so = v; SSM = 0; keep(); show() }, fx: () => { const c = S.fc || (S.fc = []), k = c.indexOf(i); k < 0 ? c.push(i) : c.splice(k, 1); show() },
-        so: () => sOpen(i, +v), mb: () => MBA[v](i), mo: () => mbOpen(v),
-        ren: () => { const n = $("#rn").value.trim(); setN(t, n); close(); show(); toast(n ? "Renamed" : "Name follows the first line") },
+        sf: () => { SF = i; SFO = 0; SSM = 0; show(); dScan(i) }, sfm: () => { SFO = !SFO; SSM = 0; show() }, ssm: () => { SSM = !SSM; SFO = 0; show() }, ss: () => { S.so = v; SSM = 0; keep(); show() }, fx: () => { const c = S.fc || (S.fc = []), k = c.indexOf(i); k < 0 ? c.push(i) : c.splice(k, 1); show() },
+        so: () => sOpen(i, +v), mb: () => MBA[v](i), mo: () => mbOpen(v), hb: () => { HB = v || (HB ? "" : "/"); hbR() },
+        ren: () => { const n = $("#rn").value.trim(); rnT(t, n); close(); show(); toast(n || t.fp ? "Renamed" : "Name follows the first line") },
         del: () => { if (b.dataset.ok !== "1") { b.dataset.ok = "1"; b.textContent = "Tap again to delete. This doesn’t go to History."; return } delT(isNaN(i) ? S.cur : i) },
         bn: () => { const r = BN[v](); if (r !== 1) t.b = null; show(true) }
       };
@@ -668,8 +923,8 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
     document.addEventListener("touchmove", e => { if (LP && LP.drag) e.preventDefault() }, { passive: false });
     document.addEventListener("contextmenu", e => { const el = e.target.closest(".tab, .cd"); if (!el) return; e.preventDefault(); if (!LP || !LP.on) tabS(+el.dataset.i) });
     // Windows layout (VS Code style): activity bar, sidebar (Explorer, Search, Starred, History), status bar.
-    // The CSS switches it on above 900px wide; the editor, tabs, Find and sheets are shared with the phone layout.
-    const DK = matchMedia("(min-width:900px)"), shOpen = () => $("#sh").classList.contains("flex");
+    // The CSS switches it on above 600px wide; the editor, tabs, Find and sheets are shared with the phone layout.
+    const DK = matchMedia("(min-width:600px)"), shOpen = () => $("#sh").classList.contains("flex");
     const SBI = "flex h-7 min-w-0 flex-1 items-center gap-2 rounded px-2 text-left hover:bg-slate-200/70 dark:hover:bg-slate-800",
       SBH = "flex h-7 shrink-0 items-center gap-1 px-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400",
       SBB = "grid size-6 shrink-0 place-items-center rounded text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-800",
@@ -693,9 +948,26 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
     // one note as a sidebar card (class cd: right-click or long-press opens its tab menu)
     const fRow = (x, i) => `<div class="cd group/r relative rounded-md ${i === S.cur ? "nc-on" : "hover:bg-slate-500/5"}" data-i="${i}"><button data-a="ovo" data-i="${i}" class="flex h-8 w-full min-w-0 items-center gap-2.5 px-3 ${x.s ? "pr-14 group-hover/r:pr-[5.25rem]" : "pr-8 group-hover/r:pr-[5.25rem]"} text-left"><span class="ni ${tx(F[x.f])}">${ic("doc", "size-4 stroke-2")}</span><span class="truncate ${i === S.cur ? "font-semibold" : ""}">${esc(D(x))}</span></button><button data-a="tdl" data-i="${i}" aria-label="Download" title="Download" class="${SBB} absolute right-[3.25rem] top-1 hidden group-hover/r:grid">${ic("dl", "size-4 stroke-2")}</button><button data-a="tstar" data-i="${i}" aria-label="${x.s ? "Unstar" : "Star"}" title="${x.s ? "Unstar" : "Star"}" class="${SBB} absolute right-7 top-1 ${x.s ? "grid !text-amber-500 dark:!text-amber-400" : "hidden group-hover/r:grid"}">${ic("star", "size-4 stroke-2" + (x.s ? " !fill-current" : ""))}</button><button data-a="tcl" data-i="${i}" aria-label="Close tab" title="Close" class="${SBB} absolute right-1.5 top-1 hidden group-hover/r:grid">${ic("x", "size-3.5 stroke-2")}</button></div>`;
     // the Library list: filtered by folder and name, then recently closed notes
+    // a closed note or a file that isn't open: faint, full colour on hover
+    const FNT = "opacity-50 hover:opacity-100";
     function nlR() {
       const q = NQ.trim().toLowerCase(), ok = x => (SF < 0 || x.f === SF) && (!q || D(x).toLowerCase().includes(q));
-      const xs = S.tabs.map((x, i) => [x, i]).filter(r => ok(r[0])); const so = SRT.find(r => r[0] === S.so); if (so && so[2]) xs.sort(so[2]);
+      const cf = SF >= 0 ? F[SF] : null;
+      if (cf && cf.d) {
+        const l = DL[cf.p], er = DE[cf.p], nt = S.tabs.map((x, i) => [x, i]).filter(r => r[0].f === SF && !r[0].fp && ok(r[0])), msg = m => `<div class="px-3 py-2 text-slate-500 dark:text-slate-400">${m}</div>`;
+        if (!l) return msg("Loading…"); if (er) return msg("Can’t read this folder. It may have moved or been deleted.");
+        const fs = dVis(SF).filter(e => !q || e.name.toLowerCase().includes(q)).map(e => { const i = S.tabs.findIndex(x => x.f === SF && x.fp === e.name); return i >= 0 ? fRow(S.tabs[i], i) : `<div class="rounded-md hover:bg-slate-500/5"><button data-a="dopen" data-v="${esc(e.name)}" title="${esc(e.name)}" class="flex h-8 w-full min-w-0 items-center gap-2.5 px-3 text-left ${FNT}"><span class="ni ${tx(cf)}">${ic("doc", "size-4 stroke-2")}</span><span class="truncate">${esc(e.name)}</span></button></div>` });
+        return (nt.map(([x, i]) => fRow(x, i)).concat(fs).join("")) || msg(q ? "No matches." : "No files in this folder.")
+      }
+      const xs = S.tabs.map((x, i) => [x, i]).filter(r => ok(r[0])); const so = SRT.find(r => r[0] === S.so);
+      // a closed note: the same row as a file in a disk folder that isn't open (Scratchpad is a folder too, kept inside rPad). Click opens it.
+      const cRow = (x, i) => `<div class="rounded-md hover:bg-slate-500/5"><button data-a="hopen" data-i="${i}" title="${esc(D(x))}" class="flex h-8 w-full min-w-0 items-center gap-2.5 px-3 text-left ${FNT}"><span class="ni ${tx(F[x.f])}">${ic("doc", "size-4 stroke-2")}</span><span class="truncate">${esc(D(x))}</span></button></div>`;
+      // a folder (like Scratchpad) lists all its notes: closing a tab doesn't remove the note from the list. Only "Open files" lists just open tabs.
+      if (cf) {
+        const all = xs.concat(S.closed.map((x, i) => [x, i, 1]).filter(r => r[0].t.trim() && ok(r[0]))); if (so && so[2]) all.sort(so[2]);
+        return all.map(([x, i, c]) => c ? cRow(x, i) : fRow(x, i)).join("") || `<div class="px-3 py-2 text-slate-500 dark:text-slate-400">${q ? "No matches." : "No notes here yet."}</div>`
+      }
+      if (so && so[2]) xs.sort(so[2]);
       const cs = S.closed.map((x, i) => [x, i]).filter(r => r[0].t.trim() && ok(r[0])).slice(0, 12);
       return (xs.map(([x, i]) => fRow(x, i)).join("") || (cs.length ? "" : `<div class="px-3 py-2 text-slate-500 dark:text-slate-400">${q ? "No matches." : "No notes here yet."}</div>`)) +
         (cs.length ? `<div class="px-3 pb-1 pt-4 text-[11px] font-medium text-slate-400">Recently closed</div>` + cs.map(([x, i]) => `<div class="group/r relative rounded-md hover:bg-slate-500/5"><button data-a="hopen" data-i="${i}" title="Closed. Click to reopen." class="flex h-8 w-full min-w-0 items-center gap-2.5 px-3 pr-8 text-left text-slate-500 dark:text-slate-400"><span class="text-slate-400">${ic("doc", "size-4 stroke-2")}</span><span class="truncate">${esc(D(x))}</span></button><button data-a="hdel" data-i="${i}" aria-label="Delete file" title="Delete file" class="${SBB} absolute right-1.5 top-1 hidden group-hover/r:grid">${ic("x", "size-3.5 stroke-2")}</button></div>`).join("") : "")
@@ -705,11 +977,11 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
       let o;
       if (p === "e") {
         if (SF >= F.length) SF = -1;
-        const cnt = k => S.tabs.filter(x => k < 0 || x.f === k).length, cf = SF < 0 ? null : F[SF], mi = (k, l, dt) => `<button data-a="sf" data-i="${k}" class="flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13px] hover:bg-slate-500/10 ${SF === k ? "font-semibold" : ""}">${dt}<span class="min-w-0 flex-1 truncate">${l}</span><span class="text-xs text-slate-400">${cnt(k) || ""}</span></button>`;
-        const bt = (cf ? `<button data-a="fe" data-i="${SF}" class="${SBB}" aria-label="Edit folder" title="Edit folder">${ic("edit", "size-4 stroke-2")}</button>` : "") + `<button ${cf ? `data-a="nt" data-i="${SF}"` : 'data-a="new"'} class="${SBB}" aria-label="New note" title="New note (Ctrl+N)">${ic("plus", "size-4 stroke-2")}</button><button data-a="nf" class="${SBB}" aria-label="New folder" title="New folder">${ic("fold", "size-4 stroke-2")}</button>`;
+        const cnt = k => k >= 0 && F[k].d && DL[F[k].p] ? dVis(k).length : S.tabs.filter(x => k < 0 || x.f === k).length + (k < 0 ? 0 : S.closed.filter(x => x.f === k && x.t.trim()).length), cf = SF < 0 ? null : F[SF], mi = (k, l, dt) => `<button data-a="sf" data-i="${k}" class="flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13px] hover:bg-slate-500/10 ${SF === k ? "font-semibold" : ""}">${dt}<span class="min-w-0 flex-1 truncate">${l}</span><span class="text-xs text-slate-400">${cnt(k) || ""}</span></button>`;
+        const bt = (cf ? `<button data-a="fe" data-i="${SF}" class="${SBB}" aria-label="Edit folder" title="Edit folder">${ic("edit", "size-4 stroke-2")}</button>` : "") + `<button data-a="new" class="${SBB}" aria-label="New note" title="New note (Ctrl+N)">${ic("plus", "size-4 stroke-2")}</button><button data-a="nf" class="${SBB}" aria-label="${DESK ? "Open folder" : "New folder"}" title="${DESK ? "Open folder…" : "New folder"}">${ic("fold", "size-4 stroke-2")}</button>`;
         o =
-          `<div class="relative flex shrink-0 items-center gap-1 px-3 pb-2 pt-3"><button data-a="sfm" aria-expanded="${!!SFO}" class="flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13px] hover:bg-slate-500/10">${cf ? `<span class="size-2 shrink-0 rounded-full ${dot(cf)}"></span>` : ic("tabs", "size-4 stroke-2 text-slate-400")}<span class="min-w-0 flex-1 truncate font-medium">${cf ? esc(cf.n) : "All folders"}</span><span class="text-xs text-slate-400">${cnt(SF) ? cnt(SF) + " open" : ""}</span>${ic("chev", "size-4 stroke-2 text-slate-400 transition-transform " + (SFO ? "rotate-180" : ""))}</button>${bt}` +
-          (SFO ? `<div id="sfmenu" class="absolute inset-x-3 top-10 z-10 rounded-lg border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-800">` + mi(-1, "All folders", ic("tabs", "size-4 stroke-2 text-slate-400")) + F.map((f, k) => mi(k, esc(f.n), `<span class="size-2 shrink-0 rounded-full ${dot(f)}"></span>`)).join("") + `</div>` : "") + `</div>` +
+          `<div class="relative flex shrink-0 items-center gap-0.5 px-2 pb-2 pt-3"><button data-a="sfm" aria-expanded="${!!SFO}" class="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-md px-2 text-left text-[13px] hover:bg-slate-500/10">${cf ? `<span class="size-2 shrink-0 rounded-full ${dot(cf)}"></span>` : ic("tabs", "size-4 stroke-2 text-slate-400")}<span class="min-w-0 flex-1 truncate font-medium">${cf ? esc(cf.n) : "Open files"}</span>${ic("chev", "size-4 shrink-0 stroke-2 text-slate-400 transition-transform " + (SFO ? "rotate-180" : ""))}</button>${bt}` +
+          (SFO ? `<div id="sfmenu" class="absolute inset-x-3 top-10 z-10 rounded-lg border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-800">` + mi(-1, "Open files", ic("tabs", "size-4 stroke-2 text-slate-400")) + F.map((f, k) => mi(k, esc(f.n), `<span class="size-2 shrink-0 rounded-full ${dot(f)}"></span>`)).join("") + `</div>` : "") + `</div>` +
           `<div class="flex shrink-0 items-center gap-1 px-3 pb-2"><label class="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-lg bg-slate-500/10 px-2.5 text-slate-500 dark:text-slate-400">${ic("find", "size-4 stroke-2")}<input id="nq" value="${esc(NQ)}" placeholder="Filter notes" autocomplete="off" aria-label="Filter notes by name" class="min-w-0 flex-1 bg-transparent text-[13px] text-slate-900 outline-none placeholder:text-slate-500 dark:text-slate-100 dark:placeholder:text-slate-400"></label><button data-a="ssm" aria-expanded="${!!SSM}" class="${SBB} !size-8" aria-label="Sort" title="Sort: ${(SRT.find(r => r[0] === S.so) || SRT[0])[1]}">${ic("srt", "size-4 stroke-2")}</button></div>` +
           (SSM ? `<div id="ssmenu" class="absolute right-3 top-[148px] z-10 w-52 rounded-lg border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-800">` + SRT.map(([k, l]) => `<button data-a="ss" data-v="${k}" class="flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13px] hover:bg-slate-500/10 ${(S.so || "o") === k ? "font-semibold" : ""}"><span class="grid size-4 place-items-center text-violet-600 dark:text-violet-400">${(S.so || "o") === k ? ic("chk", "size-4 stroke-2") : ""}</span>${l}</button>`).join("") + `</div>` : "") +
           L(`<div id="nl">${nlR()}</div>`)
@@ -745,9 +1017,9 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
     }
     function stR() {
       const t = cur(), { from: a, to: b, ln, col } = ed.sel(), w = WC;
-      $("#st").innerHTML = `<button data-a="ws" class="${STB}" title="Move this tab to a folder">${ic("fold", "size-3.5 stroke-2 " + tx(F[t.f]))}${esc(F[t.f].n)}</button><div class="flex-1"></div>` +
+      $("#st").innerHTML = `<button data-a="ws" class="sf ${STB}" title="Move this tab to a folder">${ic("fold", "size-3.5 shrink-0 stroke-2 " + tx(F[t.f]))}<span>${esc(F[t.f].n)}</span></button><div class="flex-1"></div>` +
         `<span class="px-2">Ln ${ln}, Col ${col}${b > a ? ` (${b - a} selected)` : ""}</span><span class="px-2">${w} word${w === 1 ? "" : "s"}, ${ed.length} characters</span>` +
-        `<button data-a="tg" data-v="wrap" class="${STB}" title="Toggle word wrap">Wrap: ${S.wrap === false ? "Off" : "On"}</button><button data-a="set" class="${STB}" title="Display settings">${S.fs}px · ${S.font === "sans" ? "Sans" : !S.font || S.font === "mono" ? "Mono" : esc(S.font)}</button><button data-a="thc" class="${STB}" title="Change theme">Theme: ${S.theme[0].toUpperCase() + S.theme.slice(1)}</button>`
+        `<button data-a="tg" data-v="wrap" class="s1 ${STB}" title="Toggle word wrap">Wrap: ${S.wrap === false ? "Off" : "On"}</button><button data-a="set" class="s2 ${STB}" title="Display settings">${S.fs}px · ${S.font === "sans" ? "Sans" : !S.font || S.font === "mono" ? "Mono" : esc(S.font)}</button><button data-a="thc" class="s3 ${STB}" title="Change theme">Theme: ${S.theme[0].toUpperCase() + S.theme.slice(1)}</button>`
     }
     DK.addEventListener("change", () => show());
     // Menu bar (File, Edit, View, Help) like VS Code; most items reuse the data-a actions above
@@ -756,6 +1028,13 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
     let FOM = "", MO = ""; // FOM: what the file picker is for ("bk" = restore a backup); MO: open menu
     const MBA = {
       dl: () => { const t = cur(); dlF(fileOf(t), t.t); toast(`Downloaded ${fileOf(t)}`) },
+      // Save (Ctrl+S in the Windows app): a disk tab is written to its file now; a Scratchpad tab is stored inside rPad now (both also save by themselves)
+      save: () => {
+        const t = cur(); if (!F[t.f].d) { flush(); return toast("Saved inside rPad") }
+        if (t.b === "ro" || t.b === "lock") return show(true); // the banner says why and offers a copy
+        if (t.b === "changed" || t.b === "min") return toast("This file was changed in another app. Choose which version to keep first.");
+        (t.fp ? dWrite(t) : dCreate(t)).then(() => { if (t.fp && t.t === t.ds) toast("Saved " + t.fp) })
+      },
       dla: () => { const xs = S.tabs.filter(x => x.t.trim()); xs.forEach((x, k) => setTimeout(() => dlF(fileOf(x), x.t), k * 250)); toast(xs.length ? `Downloading ${xs.length} file${xs.length === 1 ? "" : "s"}` : "No tabs with text") },
       bk: () => { const n = `notepad-backup-${new Date().toISOString().slice(0, 10)}.json`; dlF(n, JSON.stringify({ app: "rough-notepad", v: 1, F, tabs: S.tabs, closed: S.closed }), "application/json"); toast(`Backed up ${S.tabs.length} tabs to ${n}`) },
       open: () => { FOM = ""; $("#fop").accept = ""; $("#fop").click() },
@@ -792,12 +1071,12 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
     };
     // menu items: [label, attributes, shortcut, checked, disabled] or "-" for a divider
     const MN = {
-      File: () => [["New tab", 'data-a="new"', "Ctrl+Alt+N"], ["New folder…", 'data-a="nf"'], ["Open file…", 'data-a="mb" data-v="open"', "Ctrl+O"], ["Paste as new tab", 'data-a="pnew"'], "-",
-        ["Download", 'data-a="dl"', "Ctrl+S"], ["Download all tabs", 'data-a="mb" data-v="dla"'], ["Share…", 'data-a="share"'], ["Copy all text", `data-a="tcopy" data-i="${S.cur}"`], "-",
+      File: () => [["New note…", 'data-a="nta"', "Ctrl+N"], ["New scratch note", 'data-a="nt" data-i="0"', "Ctrl+Shift+N"], ["New folder…", 'data-a="nf"'], ["Open file…", 'data-a="mb" data-v="open"', "Ctrl+O"], ["Paste as new tab", 'data-a="pnew"'], "-",
+        ...(DESK ? [["Save", 'data-a="mb" data-v="save"', "Ctrl+S"]] : []), ["Download", 'data-a="dl"', DESK ? "" : "Ctrl+S"], ["Download all tabs", 'data-a="mb" data-v="dla"'], ["Share…", 'data-a="share"'], ["Copy all text", `data-a="tcopy" data-i="${S.cur}"`], "-",
         ["Back up everything (.json)", 'data-a="mb" data-v="bk"'], ["Restore from backup…", 'data-a="mb" data-v="rs"'], "-",
         ["Rename…", 'data-a="mb" data-v="ren"', "F2"], ["Move to folder…", `data-a="tmv" data-i="${S.cur}"`], ["Duplicate tab", `data-a="tdup" data-i="${S.cur}"`], "-",
         ["Reopen closed tab", 'data-a="hopen" data-i="0"', "", 0, !S.closed.length], ["Close tab", `data-a="tcl" data-i="${S.cur}"`], ["Close other tabs", `data-a="tco" data-i="${S.cur}"`, "", 0, S.tabs.length < 2], "-",
-        ["Delete file", 'data-a="mb" data-v="del"']],
+        ...(DESK ? [["Show in folder", `data-a="rev" data-i="${S.cur}"`, "Shift+Alt+R", 0, !(cur().fp && F[cur().f].d)]] : []), ["Delete file", 'data-a="mb" data-v="del"']],
       Edit: () => [["Undo", 'data-a="mb" data-v="un"', "Ctrl+Z"], ["Redo", 'data-a="mb" data-v="re"', "Ctrl+Y"], ["Select all", 'data-a="mb" data-v="sel"', "Ctrl+A"], "-",
         ["Find", 'data-a="mb" data-v="find"', "Ctrl+F"], ["Replace", 'data-a="mb" data-v="rpl"', "Ctrl+H"], ["Search all tabs", 'data-a="mb" data-v="sa"', "Ctrl+Shift+F"], "-",
         ["Clean up text…", 'data-a="cus"'], [cur().s ? "Unstar" : "Star", 'data-a="star"']],
@@ -826,6 +1105,23 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
       if (MO) $("#mbm").style.left = $(`#mb [data-v=${MO}]`).offsetLeft + "px"
     }
     const mbOpen = v => { MO = MO === v ? "" : v; mbR() };
+    // Desktop app in a narrow window: the menu bar is hidden, so the same menus open from a hamburger button in the top row.
+    // HB: "" closed, "/" the list of menus, or a menu name. Items that need the sidebar (hidden in narrow view) are left out.
+    let HB = "";
+    const hbm = document.createElement("div"); hbm.id = "hbm"; hbm.setAttribute("role", "menu");
+    hbm.className = `absolute left-2 top-[calc(env(safe-area-inset-top)+46px)] z-30 hidden max-h-[calc(100%-60px)] min-w-[240px] overflow-y-auto ${MNU}`; app.append(hbm);
+    if (DESK) $("#hb").classList.replace("hidden", "grid");
+    function hbR() {
+      $("#hb").setAttribute("aria-expanded", !!HB); hbm.style.display = HB ? "block" : "none"; if (!HB) return;
+      const row = "flex h-8 w-full items-center gap-2 rounded px-2 text-left hover:bg-violet-600 hover:text-white";
+      if (HB === "/") { hbm.innerHTML = Object.keys(MN).map(k => `<button data-a="hb" data-v="${k}" role="menuitem" class="${row}"><span class="flex-1">${k}</span><span class="opacity-60">›</span></button>`).join(""); return }
+      const xs = MN[HB]().filter(x => x === "-" || !/data-a="ap"|data-v="(sb|sa)"/.test(x[1])).filter((x, k, a) => x !== "-" || (k > 0 && a[k - 1] !== "-" && k < a.length - 1));
+      hbm.innerHTML = `<button data-a="hb" data-v="/" class="${row} font-semibold"><span class="opacity-60">‹</span><span class="flex-1">${HB}</span></button><div class="my-1 border-t border-slate-200 dark:border-slate-700"></div>` + xs.map(it).join("")
+    }
+    const hbX = () => { if (HB) { HB = ""; hbR() } };
+    document.addEventListener("click", e => { if (HB && !e.target.closest("[data-a=hb]")) hbX() });
+    document.addEventListener("keydown", e => { if (e.key === "Escape") hbX() });
+    DK.addEventListener("change", hbX);
     // Quick open (Ctrl+P): tabs by name; starting with ">" (Ctrl+Shift+P, F1) lists every menu command
     let QL = [], QI = 0;
     const qp = $("#qp"), qpi = $("#qpi"), qpOn = () => qp.style.display === "flex";
@@ -859,7 +1155,13 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
       cx.innerHTML = [["Close", `data-a="tcl" ${d}`], ["Close others", `data-a="tco" ${d}`, "", 0, S.tabs.length < 2], ["Close all", 'data-a="tca"'], "-",
         ["Rename…", `data-a="mb" data-v="ren" ${d}`, "F2"], ["Move to folder…", `data-a="tmv" ${d}`], ["Duplicate", `data-a="tdup" ${d}`], ["Open in new tab", `data-a="tnew" ${d}`], ["Copy text", `data-a="tcopy" ${d}`],
         ["Download as " + (dx(x) || "file"), `data-a="tdl" ${d}`], ["Clean up text…", `data-a="tcu" ${d}`],
-        [x.s ? "Unstar" : "Star", `data-a="tstar" ${d}`], "-", ["Delete file", `data-a="mb" data-v="del" ${d}`, "", 0, 0, "text-red-600 dark:text-red-400"]].map(it).join("");
+        [x.s ? "Unstar" : "Star", `data-a="tstar" ${d}`], ...(F[x.f].d ? [["Show non-text files", 'data-a="tg" data-v="nt"', "", !!S.nt]] : []), ...(DESK && x.fp && F[x.f].d ? [["Show in folder", `data-a="rev" ${d}`, "Shift+Alt+R"]] : []), "-", ["Delete file", `data-a="mb" data-v="del" ${d}`, "", 0, 0, "text-red-600 dark:text-red-400"]].map(it).join("");
+      cx.style.display = "block"; const r = cx.getBoundingClientRect();
+      cx.style.left = Math.min(px, innerWidth - r.width - 4) + "px"; cx.style.top = Math.min(py, innerHeight - r.height - 4) + "px"
+    }
+    // right-click on a file (or empty space) in a disk folder's list
+    function cxList(px, py, name) {
+      cx.innerHTML = [name ? ["Show in folder", `data-a="rev" data-v="${esc(name)}"`] : ["Show folder in File Explorer", `data-a="revf" data-i="${SF}"`], "-", ["Show non-text files", 'data-a="tg" data-v="nt"', "", !!S.nt], ["Refresh", 'data-a="dref"'], "-", ["Open folder…", 'data-a="nf"']].map(it).join("");
       cx.style.display = "block"; const r = cx.getBoundingClientRect();
       cx.style.left = Math.min(px, innerWidth - r.width - 4) + "px"; cx.style.top = Math.min(py, innerHeight - r.height - 4) + "px"
     }
@@ -879,15 +1181,17 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
     }
     document.addEventListener("click", cxX); addEventListener("blur", cxX); addEventListener("resize", cxX);
     document.addEventListener("keydown", e => { if (e.key === "Escape") cxX() });
-    document.addEventListener("contextmenu", e => { cxX(); const el = e.target.closest(".tab, .cd"); if (el && DK.matches) { e.preventDefault(); e.stopImmediatePropagation(); cxOpen(+el.dataset.i, e.clientX, e.clientY) } else if (DK.matches && !e.shiftKey && e.target.closest("#cmh")) { e.preventDefault(); e.stopImmediatePropagation(); cxEd(e.clientX, e.clientY) } }, true);
+    document.addEventListener("contextmenu", e => { cxX(); const fr = DESK && e.target.closest("[data-a=sf]"), el = e.target.closest(".tab, .cd");
+      if (fr && F[+fr.dataset.i]?.d) { e.preventDefault(); e.stopImmediatePropagation(); cx.innerHTML = it(["Show folder in File Explorer", `data-a="revf" data-i="${fr.dataset.i}"`]); cx.style.display = "block"; cx.style.left = Math.min(e.clientX, innerWidth - cx.offsetWidth - 4) + "px"; cx.style.top = Math.min(e.clientY, innerHeight - cx.offsetHeight - 4) + "px"; return }
+      if (el && (DESK || DK.matches)) { e.preventDefault(); e.stopImmediatePropagation(); cxOpen(+el.dataset.i, e.clientX, e.clientY) } else if (DESK && SF >= 0 && F[SF].d && e.target.closest("#nl, #sbc")) { e.preventDefault(); e.stopImmediatePropagation(); cxList(e.clientX, e.clientY, e.target.closest("[data-a=dopen]")?.dataset.v) } else if (DK.matches && !e.shiftKey && e.target.closest("#cmh")) { e.preventDefault(); e.stopImmediatePropagation(); cxEd(e.clientX, e.clientY) } }, true);
     $("#ed").addEventListener("scroll", cxX, true);
     // shortcuts (VS Code keys where the browser lets a page use them)
     document.addEventListener("keydown", e => {
       if (e.key === "Escape" && MO) { MO = ""; return mbR() }
       const k = e.key.toLowerCase(), c = e.ctrlKey || e.metaKey;
-      const f = e.key === "F2" ? MBA.ren : e.key === "F1" || (c && e.shiftKey && k === "p") ? () => qpOpen(">") : c && !e.shiftKey && !e.altKey && k === "p" ? MBA.qo : e.altKey && !c && k === "z" ? () => { S.wrap = S.wrap === false; show() } : !c ? null :
-        e.altKey ? (k === "n" ? () => add() : null) :
-          e.shiftKey ? { f: MBA.sa }[k] : { s: MBA.dl, o: MBA.open, f: MBA.find, h: MBA.rpl, "=": MBA.zi, "+": MBA.zi, "-": MBA.zo }[k];
+      const f = e.key === "F2" ? MBA.ren : e.key === "F1" || (c && e.shiftKey && k === "p") ? () => qpOpen(">") : c && !e.shiftKey && !e.altKey && k === "p" ? MBA.qo : e.altKey && !c && k === "z" ? () => { S.wrap = S.wrap === false; show() } : e.altKey && e.shiftKey && !c && k === "r" && DESK ? () => dRev(cur().f, cur().fp) : !c ? null :
+        e.altKey ? (k === "n" ? ntAsk : null) :
+          e.shiftKey ? { f: MBA.sa, n: () => add(0) }[k] : { s: DESK ? MBA.save : MBA.dl, n: ntAsk, o: MBA.open, f: MBA.find, h: MBA.rpl, "=": MBA.zi, "+": MBA.zi, "-": MBA.zo }[k];
       if (f && !shOpen()) { e.preventDefault(); f() }
     });
     // Ctrl+B shows or hides the sidebar, like VS Code
@@ -895,11 +1199,15 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
     // drag the sidebar's right edge to resize it
     const rz = $("#rz");
     rz.onpointerdown = e => { rz.setPointerCapture(e.pointerId); e.preventDefault() };
-    rz.onpointermove = e => { if (!rz.hasPointerCapture(e.pointerId)) return; S.sbw = Math.round(Math.max(170, Math.min(520, e.clientX - 12))); app.style.setProperty("--sbw", S.sbw + "px") };
+    rz.onpointermove = e => { if (!rz.hasPointerCapture(e.pointerId)) return; S.sbw = Math.round(Math.max(220, Math.min(520, e.clientX - 12))); app.style.setProperty("--sbw", S.sbw + "px") };
     rz.onpointerup = () => keep();
-    if (S.sbw) app.style.setProperty("--sbw", S.sbw + "px"); app.classList.toggle("sbh", !!S.sbh);
+    if (S.sbw) { S.sbw = Math.max(220, S.sbw); app.style.setProperty("--sbw", S.sbw + "px") }
+    // below 900px wide the sidebar hides by itself (Ctrl+B still opens it); wider again, it goes back to how you had it
+    const SBM = matchMedia("(min-width:900px)"); let SBK = null;
+    const sbAuto = () => { if (!SBM.matches) { if (SBK === null) SBK = S.sbh; S.sbh = 1 } else if (SBK !== null) { S.sbh = SBK; SBK = null } app.classList.toggle("sbh", !!S.sbh) };
+    sbAuto(); SBM.addEventListener("change", () => { sbAuto(); show() });
     addEventListener("hashchange", render);
-    theme(); applyTop(); render();
+    theme(); applyTop(); render(); dSync();
     // desktop: the editor takes keystrokes right away (on launch, on window focus, and when the empty area is clicked)
     if (DK.matches) {
       const grab = () => { const o = document.activeElement; if (!o || o === document.body) ed.focus() };
