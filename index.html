@@ -387,8 +387,8 @@
     function theme() {
       applyPalette(S.pal);
       const d = S.theme === "dark" || (S.theme === "auto" && DQ.matches), tc = document.querySelectorAll("meta[name=theme-color]"); document.documentElement.classList.toggle("dark", d);
-      // on desktop the window title bar matches the menu bar (slate-100 / slate-950)
-      const dk = matchMedia("(min-width:600px)").matches, L = paletteHex(S.pal, dk ? 100 : 50), D = paletteHex(S.pal, dk ? 950 : 900);
+      // on desktop the window title bar matches the ribbon behind the menu bar (the #app background: slate-200 / slate-950)
+      const dk = matchMedia("(min-width:600px)").matches, L = paletteHex(S.pal, dk ? 200 : 50), D = paletteHex(S.pal, dk ? 950 : 900);
       tc[0].content = S.theme === "dark" ? D : L; tc[1].content = S.theme === "light" ? L : D;
       if (DESK) TAU.caption(d ? D : L)
     }
