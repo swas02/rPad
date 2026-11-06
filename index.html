@@ -104,10 +104,11 @@
       #app.sbh { grid-template-columns: 0 0 minmax(0, 1fr) }
       .dark #app { background: rgb(var(--n950)) }
       #mb, #st, #ab { background: transparent; border: 0 }
-      #st { padding: 0; align-items: center; font-size: 12px; color: rgb(var(--n700)) }
-      .dark #st { color: rgb(var(--n300)) }
+      #st { padding: 0; align-items: center; font-size: 12px; color: rgb(var(--n600)) }
+      .dark #st { color: rgb(var(--n400)) }
       #st > * { border-radius: 6px; padding: 2px 12px; line-height: 20px }
-      #st > button:hover, #st > [data-a]:hover { background: rgb(var(--n500) / .15) }
+      #st > button:hover, #st > [data-a]:hover { color: rgb(var(--n950)) } /* no button look: the text only gets brighter */
+      .dark #st > button:hover, .dark #st > [data-a]:hover { color: #fff }
       #sb { margin-right: 8px; padding-top: 44px; background: rgb(var(--n50)); border: 1px solid rgb(var(--n300)); border-radius: 12px; box-shadow: 0 1px 2px rgb(0 0 0 / .04) }
       #sbc { overflow: hidden; border-radius: 0 0 11px 11px }
       .dark #sb { background: rgb(var(--n900)); border-color: rgb(var(--n800)) }
@@ -965,7 +966,7 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
     const SBI = "flex h-7 min-w-0 flex-1 items-center gap-2 rounded px-2 text-left hover:bg-slate-200/70 dark:hover:bg-slate-800",
       SBH = "flex h-7 shrink-0 items-center gap-1 px-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400",
       SBB = "grid size-6 shrink-0 place-items-center rounded text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-800",
-      STB = "flex h-full items-center gap-1 px-2 hover:bg-slate-200 dark:hover:bg-slate-800";
+      STB = "flex h-full items-center gap-1 px-2";
     let SQ = "", SF = -1, NQ = "", SFO = 0, SSM = 0; // Library panel: folder filter (-1 = all), name filter, folder menu open, sort menu open
     // Library sort choices (S.so holds the chosen key); each compares two [tab, index] pairs
     const SRT = [["o", "Open order", null], ["az", "Name, A to Z", (a, b) => D(a[0]).localeCompare(D(b[0]))], ["za", "Name, Z to A", (a, b) => D(b[0]).localeCompare(D(a[0]))],
