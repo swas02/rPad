@@ -26,6 +26,9 @@
     }
   </script>
   <style>
+    /* Standard animation time and easing (linear) for the whole app: change it here only. JS reads it too (see DUR). */
+    :root { --dur: .15s }
+    *, ::before, ::after { transition-duration: var(--dur) !important; transition-timing-function: linear !important }
     /* Windows layout (VS Code style): activity bar | sidebar | editor, status bar along the bottom */
     /* Phone look: pill tabs, brighter chrome icons and counter (desktop overrides below) */
     #tabs { gap: 6px; padding: 0 12px }
@@ -35,7 +38,7 @@
     #top { border-bottom: 1px solid rgb(var(--n200)) }
     .dark #top { border-bottom-color: rgb(var(--n800)) }
     /* sidebar splitter: an invisible grab area; a thin line shows after a short hover, and at once while dragging (like VS Code) */
-    #rz::after { content: ""; position: absolute; inset-block: 12px; left: 50%; width: 2px; margin-left: -1px; border-radius: 1px; background: rgb(124 58 237); opacity: 0; transition: opacity .1s }
+    #rz::after { content: ""; position: absolute; inset-block: 12px; left: 50%; width: 2px; margin-left: -1px; border-radius: 1px; background: rgb(124 58 237); opacity: 0; transition: opacity var(--dur) }
     .dark #rz::after { background: rgb(167 139 250) }
     #rz:hover::after { opacity: 1; transition-delay: .3s }
     #rz.on::after { opacity: 1; transition-delay: 0s }
@@ -151,13 +154,15 @@
   @media (hover:hover) and (pointer:fine){
     #ed .cm-scroller::-webkit-scrollbar{width:14px;height:14px;background:transparent}
     #ed .cm-scroller::-webkit-scrollbar-track,#ed .cm-scroller::-webkit-scrollbar-corner{background:transparent}
-    @keyframes svP{45%{transform:scale(.6);opacity:.3}} .sv{animation:svP .8s ease-in-out}
+    @keyframes tclK{to{opacity:0;transform:scale(.9)}} .tcl{animation:tclK var(--dur) linear forwards;pointer-events:none}
+@keyframes pclK{to{opacity:0;transform:translateY(6px)}} .pcl{animation:pclK var(--dur) linear forwards}
+@keyframes svP{45%{transform:scale(.6);opacity:.3}} .sv{animation:svP var(--dur) linear}
     @keyframes shF{from{opacity:0}} @keyframes shU{from{transform:translateY(100%)}} @keyframes shP{from{opacity:0;transform:translateY(-10px) scale(.97)}}
-    #sh{overflow:hidden;overscroll-behavior:contain} #sh.flex{animation:shF .2s ease-out} #sh.flex #sheet{animation:shU .3s cubic-bezier(.2,.8,.2,1)}
-    #sh.out{animation:shF .18s ease-in reverse forwards} #sh.out #sheet{animation:shU .18s ease-in reverse forwards}
-    @media (min-width:600px){#sh.flex #sheet{animation:shP .18s cubic-bezier(.2,.8,.2,1)} #sh.out #sheet{animation:shP .12s ease-in reverse forwards}}
+    #sh{overflow:hidden;overscroll-behavior:contain} #sh.flex{animation:shF var(--dur) linear} #sh.flex #sheet{animation:shU var(--dur) linear}
+    #sh.out{animation:shF var(--dur) linear reverse forwards} #sh.out #sheet{animation:shU var(--dur) linear reverse forwards}
+    @media (min-width:600px){#sh.flex #sheet{animation:shP var(--dur) linear} #sh.out #sheet{animation:shP var(--dur) linear reverse forwards}}
     @media (prefers-reduced-motion:reduce){#sh,#sh #sheet{animation:none!important}}
-    #ed .cm-scroller::-webkit-scrollbar-thumb{background:rgb(var(--n500)/.3);border:3px solid transparent;background-clip:padding-box;border-radius:7px;min-height:40px;min-width:40px;transition:background-color .15s}
+    #ed .cm-scroller::-webkit-scrollbar-thumb{background:rgb(var(--n500)/.3);border:3px solid transparent;background-clip:padding-box;border-radius:7px;min-height:40px;min-width:40px;transition:background-color var(--dur)}
     #ed .cm-scroller:hover::-webkit-scrollbar-thumb{background-color:rgb(var(--n500)/.45)}
     #ed .cm-scroller::-webkit-scrollbar-thumb:hover{background-color:rgb(var(--n500)/.75)}
     #ed .cm-scroller::-webkit-scrollbar-thumb:active{background-color:rgb(var(--n500)/.95)}
@@ -298,11 +303,12 @@
   </div>
   <script>
     const $ = s => document.querySelector(s);
+    const DUR = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--dur")) * 1000; // standard animation time in ms (CSS variable --dur)
     // the editor (src/editor.js, built into editor.js): CodeMirror 6 with one saved state per tab
     const ed = Editor.create({
       parent: $("#cmh"),
       // text changed in tab `id`; the page keeps the text in S for saving
-      onText: (id, text) => { const t = S.tabs.find(x => x.id === id); if (!t) return; t.t = text; t.m = Date.now(); dSave(t); t === cur() ? typed(t) : keep() },
+      onText: (id, text) => { const t = S.tabs.find(x => x.id === id); if (!t) return; t.t = text; t.m = Date.now(); if (!(TAU && F[t.f]?.d)) kP = t; dSave(t); t === cur() ? typed(t) : keep() },
       onSelect: () => { wlR(); if (DK.matches) stR() },
       onFind: f => { $("#fc").textContent = !f.on ? "" : f.count ? `${f.index || "–"}/${f.count}${f.more ? "+" : ""}` : $("#fi").value ? "0" : "" }
     });
@@ -350,9 +356,12 @@
     // Setting "Start with a new note": at start, open an empty Scratchpad note and show it
     if (S.sn && !S.tabs.some(x => x.f === 0 && !x.fp && !x.t && !x.n)) { S.tabs.push({ t: "", f: 0 }); S.cur = S.tabs.length - 1 } S.cur = Math.min(Math.max(+S.cur || 0, 0), S.tabs.length - 1);
     S.closed = (S.closed || []).filter(x => F[x.f]);
-    // keep() waits 500 ms, then flush() writes the notes to the page storage; the dot of the shown tab pulses in between (see dPulse)
-    let kT = 0; const flush = () => { clearTimeout(kT); kT = 0; try { localStorage.setItem("sp-m1", JSON.stringify(S)) } catch (e) { } dPulse(S.tabs[S.cur]) }, keep = () => { clearTimeout(kT); kT = setTimeout(flush, 500); $("#tabs").children[S.cur]?.firstElementChild?.classList.add("sv") };
-    addEventListener("pagehide", () => kT && flush()); addEventListener("visibilitychange", () => kT && flush());
+    // Auto-save (keep() for notes, dSave() for disk files): the save starts AUTO ms after the last change (the standard debounce). keep() waits, then flush() writes the notes to the page storage; the dot pulses once the write is done (see dPulse)
+    // AUTO_MAX: a fast typist never pauses for 1 s, so a save never waits more than AUTO_MAX ms from the first change not saved yet (since)
+    const AUTO = 1000, AUTO_MAX = 2000, aWait = since => Math.max(0, Math.min(AUTO, since + AUTO_MAX - Date.now()));
+    // kP: the note whose text changed since the last flush; only it pulses (a disk file pulses when its disk write is done, see dWrite; other changes, such as a tab switch, do not pulse)
+    let kT = 0, kQ = 0, kP = null; const flush = () => { clearTimeout(kT); kT = 0; kQ = 0; try { localStorage.setItem("sp-m1", JSON.stringify(S)); kP && dPulse(kP) } catch (e) { } kP = null }, keep = () => { clearTimeout(kT); kQ ||= Date.now(); kT = setTimeout(flush, aWait(kQ)) };
+    addEventListener("pagehide", () => kT && flush()); addEventListener("visibilitychange", () => kT && flush()); addEventListener("blur", () => kT && flush()); // save at once when the window loses focus
     const cur = () => S.tabs[S.cur];
     // hash routes: #/note/<id>  #/tabs  #/folders  #/folders/<n>  #/starred
     const app = $("#app"), RT = { tabs: "t", folders: "g", starred: "s" };
@@ -463,7 +472,7 @@
     }
     const close = () => {
       const sh = $("#sh"); if (!sh.classList.contains("flex") || sh.classList.contains("out")) return;
-      sh.classList.add("out"); shT = setTimeout(() => { sh.classList.replace("flex", "hidden"); sh.classList.remove("out") }, 180);
+      sh.classList.add("out"); shT = setTimeout(() => { sh.classList.replace("flex", "hidden"); sh.classList.remove("out") }, DUR);
       if (shH) { shH = 0; skip = location.hash; history.back() }
       if (shF && shF !== ed.dom && document.contains(shF)) shF.focus(); shF = null
     };
@@ -626,7 +635,7 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
       },
       delete_file: async ({ dir, name }) => TAU.fs.remove(await dP(dir, name)),
     }, inv = (c, a) => CMD[c](a);
-    const DL = {}, DE = {}, dW = new Map(), dC = new Set(), dMv = new Set(); // DL: folder path -> files from the last scan; DE: scan error; dW: pending saves; dC: files being made; dMv: tabs being moved
+    const DL = {}, DE = {}, dW = new Map(), dQ = new Map(), dC = new Set(), dMv = new Set(); // DL: folder path -> files from the last scan; DE: scan error; dW: pending saves; dC: files being made; dMv: tabs being moved
     const splitN = nm => { const m = nm.match(/^(.+)\.([a-z0-9_+-]{1,10})$/i); return m && /[a-z]/i.test(m[2]) ? [m[1], m[2].toLowerCase()] : [nm, ""] };
     const dBase = p => p.split(/[\\/]/).filter(Boolean).pop() || p, dFix = s => s.replace(/\r\n?/g, "\n");
     // text = the Rust side found it readable as UTF-8 text (any extension). Everything else is hidden unless Settings > Show non-text files is on.
@@ -636,43 +645,46 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
       const f = F[k]; if (!TAU || !f || !f.d) return Promise.resolve();
       return inv("list_dir", { dir: f.p }).then(v => { DL[f.p] = v; DE[f.p] = "" }, e => { DL[f.p] = []; DE[f.p] = String(e) }).then(() => { const n = $("#nl"); if (n && DK.matches) n.innerHTML = nlA(); if (OG === k && app.classList.contains("insw")) ovL() })
     }
-    // the dot before the tab name pulses while auto-save is waiting or writing (class sv, see the CSS)
+    // the dot before the tab name pulses once, when a save is done (class sv, see the CSS)
     const dB = new Set(); // tabs that are being written now
-    const dPulse = t => $("#tabs").children[S.tabs.indexOf(t)]?.firstElementChild?.classList.add("sv");
+    let dPT = 0; // at most one blink per second, even when many saves finish in that second
+    const dPulse = t => Date.now() - dPT < 1000 ? 0 : (dPT = Date.now(), $("#tabs").children[S.tabs.indexOf(t)]?.firstElementChild?.classList.add("sv"));
     $("#tabs").addEventListener("animationend", e => e.target.classList.remove("sv")); // one soft blink per save; typing on keeps it going
     function dSave(t) {
       // A new tab is not a file yet: it has a temporary name only. Auto-save makes the file when the tab has text.
       // An empty new tab is never saved by itself (only Save, Ctrl+S, makes it a file). A file that exists is always saved, also when you empty it.
       const f = F[t.f]; if (!TAU || !f || !f.d || dMv.has(t)) return; // while moving, saving waits (the move saves after)
-      const nw = () => !t.fp && !t.t.trim(); clearTimeout(dW.get(t)); dW.delete(t); if (nw()) return dPulse(t); // text deleted again before the save: cancel it
-      dW.set(t, setTimeout(() => t.fp ? dWrite(t) : nw() ? (dW.delete(t), dPulse(t)) : dCreate(t), 500)); dPulse(t)
+      const nw = () => !t.fp && !t.t.trim(); clearTimeout(dW.get(t)); dW.delete(t); if (nw()) return dQ.delete(t); // text deleted again before the save: cancel it
+      if (!dQ.has(t)) dQ.set(t, Date.now()); // dQ: time of the first change not saved yet (see aWait)
+      dW.set(t, setTimeout(() => t.fp ? dWrite(t) : nw() ? dW.delete(t) : dCreate(t), aWait(dQ.get(t))))
     }
     function dWrite(t, force) {
-      clearTimeout(dW.get(t)); dW.delete(t); const f = F[t.f];
+      if (!force && dB.has(t)) { clearTimeout(dW.get(t)); dW.delete(t); return Promise.resolve() } // a write of this file is still running: the finally below saves the newer text after it
+      clearTimeout(dW.get(t)); dW.delete(t); dQ.delete(t); const f = F[t.f];
       if (!t.fp || !f || !f.d || (t.b === "ro" || t.b === "lock" || (!force && (t.b === "changed" || t.b === "min")))) return Promise.resolve();
       // a failed save means rPad lost write access: lock the tab and offer a copy (the "lock" banner); the text stays in rPad
       // ds = the text that was written, not the text now: a change typed during the write stays unsaved, and its own timer saves it
-      const s = t.t; dB.add(t); dPulse(t);
-      return inv("write_text", { dir: f.p, name: t.fp, text: dOut(t), createOnly: false, expect: force ? 0 : t.mt }).then(m => { t.mt = m; t.ds = s; if (t.b === "gone") t.b = null }, e => {
+      const s = t.t; dB.add(t);
+      return inv("write_text", { dir: f.p, name: t.fp, text: dOut(t), createOnly: false, expect: force ? 0 : t.mt }).then(m => { t.mt = m; t.ds = s; if (t.b === "gone") t.b = null; dPulse(t) }, e => {
         t.b = e === "changed" ? "changed" : "lock"; // "changed": another app edited the file; the banner asks which version to keep
         if (t === cur()) show(); else toast(e === "changed" ? t.fp + " was changed by another app" : "Cannot save " + t.fp)
-      }).finally(() => { dB.delete(t) })
+      }).finally(() => { dB.delete(t); if (t.t !== t.ds && !dW.has(t)) dSave(t) })
     }
     const dOut = t => t.le === "\r\n" ? t.t.replace(/\n/g, "\r\n") : t.t;
     // a new note in a disk folder becomes a file once it has text; its name is the one it already shows (or the date), made unique
     // q: no error toast (the caller handles it). Returns true when the file was made.
     async function dCreate(t, q) {
-      const f = F[t.f]; if (!f || !f.d || t.fp || dC.has(t)) return false; dC.add(t); clearTimeout(dW.get(t)); dW.delete(t);
+      const f = F[t.f]; if (!f || !f.d || t.fp || dC.has(t)) return false; dC.add(t); clearTimeout(dW.get(t)); dW.delete(t); dQ.delete(t);
       const base = t.n || tName(t);
       try {
         for (let k = 1; k < 100; k++) {
           const nm = fileOf({ ...t, n: base + (k > 1 ? ` (${k})` : "") }), s = t.t;
           try { t.mt = await inv("write_text", { dir: f.p, name: nm, text: dOut(t), createOnly: true }); t.fp = nm; t.ds = s; [t.n, t.x] = splitN(nm); break } catch (e) { if (e !== "exists") throw e }
         }
-        show(); dScan(t.f); return !!t.fp
+        show(); dScan(t.f); dPulse(t); return !!t.fp
       } catch (e) { if (!q) toast("Cannot create the file"); return false }
       // The text changed while the file was being made (typed more, or cleared): the file now exists, so save the new text (also empty) the normal way
-      finally { dC.delete(t); dPulse(t); if (t.fp && t.t !== t.ds) dSave(t) }
+      finally { dC.delete(t); if (t.fp && t.t !== t.ds) dSave(t) }
     }
     // Make a copy (read-only, can't save, or deleted file): the tab becomes "<name> (copy)" in the same folder, editable.
     // The original file is not changed. If the folder can't be written either, the text goes to a new Scratchpad note.
@@ -789,7 +801,7 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
       }
       if (!q && t === cur() && (t.b !== b0 || t.t !== t0)) show(true)
     }
-    addEventListener("focus", dSync); addEventListener("pagehide", () => [...dW.keys()].forEach(t => t.fp ? dWrite(t) : dCreate(t)));
+    addEventListener("focus", dSync); { const dNow = () => [...dW.keys()].forEach(t => t.fp ? dWrite(t) : dCreate(t)); addEventListener("pagehide", dNow); addEventListener("blur", dNow) }
     // the Library folder for disk path p (added if it is not there); returns its index.
     // h: only a file in it was opened (Open file). The folder is kept for its tabs but not listed; Open folder on it lists it.
     function dFolder(p, h) {
@@ -842,7 +854,16 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
     const logP = x => { if (DESK) TAU.logClosed(fullP(x).split(/[\\/]+/).filter(Boolean)) };
     const toRecent = x => { const r = { f: x.f, fp: x.fp, n: x.n, x: x.x, t: "", d: "Just now" }; S.closed = S.closed.filter(y => !(y.f === r.f && y.fp === r.fp)); S.closed.unshift(r); logP(x) };
     const toClosed = x => { if (x.fp || !keepX(x)) return; const { m: _m, ...y } = x; S.closed.unshift({ ...y, d: "Just now" }); logP(x) };
+    // Close: the tab fades and shrinks a little, and the page fades with it (standard time), then the tab is removed. Class tcl / pcl: see the CSS.
+    let closing = 0;
     function closeT(i) {
+      if (closing) return;
+      const b = $("#tabs").children[i];
+      if (!b || matchMedia("(prefers-reduced-motion: reduce)").matches) return closeNow(i);
+      closing = 1; b.classList.add("tcl"); if (i === S.cur) $("#ed").classList.add("pcl");
+      setTimeout(() => { closing = 0; $("#ed").classList.remove("pcl"); closeNow(i) }, DUR)
+    }
+    function closeNow(i) {
       // the file stays in its folder (as a closed tab); an empty file you never named is discarded
       const x = S.tabs[i], nm = fileOf(x), fo = F[x.f].n, kp = keepX(x); S.tabs.splice(i, 1); toClosed(x);
       if (!S.tabs.length) S.tabs.push({ t: "", f: 0 }); if (i <= S.cur && S.cur > 0) S.cur--;
@@ -1114,7 +1135,7 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
       dl: () => { const t = cur(); dlF(fileOf(t), t.t); toast(`rPad downloaded ${fileOf(t)}`) },
       // Save (Ctrl+S in the Windows app): a disk tab is written to its file now; a Scratchpad tab is stored inside rPad now (both also save by themselves)
       save: () => {
-        const t = cur(); if (!F[t.f].d) { flush(); return toast("Auto-save is on. You do not need to press Ctrl+S.") }
+        const t = cur(); if (!F[t.f].d) { flush(); return toast("Auto-save is on. No need to press Ctrl+S.") }
         if (t.b === "ro" || t.b === "lock") return show(true); // the banner says why and offers a copy
         if (t.b === "changed" || t.b === "min") return toast("Another app changed this file. First, select the version to keep.");
         (t.fp ? dWrite(t) : dCreate(t)).then(() => { if (t.fp && t.t === t.ds) toast(`rPad saved ${t.fp}. Auto-save is on. You do not need to press Ctrl+S.`) })
