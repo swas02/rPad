@@ -135,7 +135,7 @@
       #ab button[aria-pressed=true] { background: rgb(var(--a500) / .16) }
       #ab button:hover { background: rgb(var(--n500) / .12) }
       /* sidebar content (note list, Settings) uses one text size */
-      #nl, #sb .stg { font-size: 14px; line-height: 20px }
+      #nl, #hl, #sb .stg { font-size: 14px; line-height: 20px }
       #sb .stg .text-\[13px\], #sb .stg .text-sm { font-size: 14px }
       /* narrow sidebar: compact rows, labels never wrap, size row wraps instead of clipping */
       #sb .stg [role=switch], #sb .stg .szr { padding-left: 10px; padding-right: 10px; gap: 8px }
@@ -811,9 +811,12 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
       dWrite(t).then(() => inv("rename_file", { dir: f.p, from: t.fp, to: nm })).then(m => { t.fp = nm; t.mt = m; dScan(t.f); show() }, e => { [t.n, t.x] = o; show(); toast(e === "exists" ? "A file with this name is already in the folder" : "Cannot rename the file") })
     }
     const afterTabs = () => app.classList.contains("insw") ? (show(true), ovS()) : show(true);
+    // Desktop: every closed file is also written to the History file (history.json in the app data folder, an array; each path is split into its parts) with its full path.
+    // A file from a disk folder has its real path. A note typed in rPad has no file, so its path starts with "rPad".
+    const logC = x => { if (!DESK || !keepX(x)) return; const f = F[x.f]; TAU.logClosed((x.fp && f.p ? f.p + "\\" + x.fp : "rPad\\" + f.n + "\\" + fileOf(x)).split(/[\\/]+/).filter(Boolean)) };
     function closeT(i) {
       // the file stays in its folder (as a closed tab); an empty file you never named is discarded
-      const x = S.tabs[i], nm = fileOf(x), fo = F[x.f].n, kp = keepX(x); S.tabs.splice(i, 1); if (kp && !x.fp) S.closed.unshift({ ...x, d: "Just now" });
+      const x = S.tabs[i], nm = fileOf(x), fo = F[x.f].n, kp = keepX(x); logC(x); S.tabs.splice(i, 1); if (kp && !x.fp) S.closed.unshift({ ...x, d: "Just now" });
       if (!S.tabs.length) S.tabs.push({ t: "", f: 0 }); if (i <= S.cur && S.cur > 0) S.cur--;
       close(); afterTabs(); if (kp) toast(`The tab is closed. ${nm} stays in ${fo}.`)
     }
@@ -829,7 +832,7 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
       close(); afterTabs(); toast(`${nm} is deleted`, () => { S.tabs.splice(i, 0, x); S.cur = c; afterTabs() })
     }
     function closeMany(keepIdx) {
-      const k = S.tabs[keepIdx]; S.tabs.forEach(x => { if (x !== k && keepX(x) && !x.fp) S.closed.unshift({ ...x, d: "Just now" }) });
+      const k = S.tabs[keepIdx]; S.tabs.forEach(x => { if (x !== k) logC(x); if (x !== k && keepX(x) && !x.fp) S.closed.unshift({ ...x, d: "Just now" }) });
       S.tabs = k ? [k] : [{ t: "", f: 0 }]; S.cur = 0; close(); afterTabs(); toast(k ? "The other tabs are closed" : "All tabs are closed")
     }
     function tabS(i) {
@@ -1031,8 +1034,8 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
         const xs = S.tabs.map((x, i) => [x, i]).filter(r => r[0].s);
         o = h("Starred") + L(xs.length ? xs.map(([x, i]) => fRow(x, i)).join("") : `<div class="px-2 py-1 text-slate-500 dark:text-slate-400">No starred tabs yet. Use the star in the menu to star a tab.</div>`)
       } else {
-        o = h("History", S.closed.length ? `<button data-a="hclr" class="-mr-1.5 rounded px-1.5 py-0.5 normal-case tracking-normal text-red-600 hover:bg-slate-200 dark:text-red-400 dark:hover:bg-slate-800">Clear all</button>` : "") + `<div class="mx-3 mb-1.5 shrink-0 border-b border-slate-200 dark:border-slate-700"></div>` +
-          L(S.closed.length ? S.closed.map((x, i) => !x.t.trim() ? "" : `<div class="group/r relative flex items-center"><button data-a="hopen" data-i="${i}" class="${SBI} pr-8" title="Reopen"><span class="truncate">${esc(D(x))}</span><span class="ml-auto shrink-0 text-slate-400">${esc(F[x.f].n)}</span></button><button data-a="hdel" data-i="${i}" aria-label="Remove from History" title="Remove from History" class="${SBB} absolute right-0.5">${ic("x", "size-3.5 stroke-2")}</button></div>`).join("") : `<div class="px-2 py-1 text-slate-500 dark:text-slate-400">No closed tabs yet.</div>`)
+        o = `<div class="flex shrink-0 items-center gap-0.5 px-2 pb-2 pt-3"><div class="flex h-8 min-w-0 flex-1 items-center gap-2 px-2 text-[13px]">${ic("doc", "size-4 shrink-0 stroke-2 text-slate-400")}<span class="min-w-0 flex-1 truncate font-medium">Closed files</span></div>${S.closed.length ? `<button data-a="hclr" class="h-8 shrink-0 rounded-md px-2 text-[13px] text-red-600 hover:bg-slate-500/10 dark:text-red-400">Clear all</button>` : ""}</div>` +
+          L(`<div id="hl">` + (S.closed.length ? S.closed.map((x, i) => !x.t.trim() ? "" : `<div class="group/r relative rounded-md hover:bg-slate-500/5"><button data-a="hopen" data-i="${i}" title="${esc(F[x.f].n)}. Click to reopen." class="flex h-8 w-full min-w-0 items-center gap-2.5 px-3 pr-8 text-left"><span class="ni ${tx(F[x.f])}">${ic("doc", "size-4 stroke-2")}</span><span class="truncate">${esc(D(x))}</span></button><button data-a="hdel" data-i="${i}" aria-label="Remove from History" title="Remove from History" class="${SBB} absolute right-1.5 top-1 hidden group-hover/r:grid">${ic("x", "size-3.5 stroke-2")}</button></div>`).join("") : `<div class="px-3 py-2 text-slate-500 dark:text-slate-400">No closed tabs yet.</div>`) + `</div>`)
       }
       $("#sbc").innerHTML = o;
       if (p === "e") $("#nq").oninput = e => { NQ = e.target.value; $("#nl").innerHTML = nlR() };

@@ -11,7 +11,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_os::init())
         .manage(Caption(Mutex::new(None)))
-        .invoke_handler(tauri::generate_handler![caption, pick_files])
+        .invoke_handler(tauri::generate_handler![caption, pick_files, history_add])
         // the window gets or loses focus: paint the title bar again (the title text is grey when the window is not active)
         .on_window_event(|w, e| {
             if let tauri::WindowEvent::Focused(f) = e {
@@ -32,6 +32,18 @@ async fn pick_files(app: tauri::AppHandle, window: tauri::Window) -> Vec<String>
     let Some(fs) = app.dialog().file().set_title("Open file").set_parent(&window).blocking_pick_files() else { return vec![] };
     fs.into_iter().filter_map(|f| f.into_path().ok()).filter(|p| p.parent().is_some_and(|d| app.fs_scope().allow_directory(d, false).is_ok()))
         .map(|p| p.to_string_lossy().into_owned()).collect()
+}
+
+// History file: history.json in the app data folder is one JSON array; each item is the full path of a closed file, split into its parts (newest last).
+// It is a separate file, so it stays even if the page storage is cleared. The page cannot choose the file name or the folder.
+#[tauri::command]
+fn history_add(app: tauri::AppHandle, path: Vec<String>) -> Result<(), String> {
+    let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let file = dir.join("history.json");
+    let mut list: Vec<Vec<String>> = std::fs::read_to_string(&file).ok().and_then(|t| serde_json::from_str(&t).ok()).unwrap_or_default();
+    list.push(path);
+    std::fs::write(&file, serde_json::to_string_pretty(&list).map_err(|e| e.to_string())?).map_err(|e| e.to_string())
 }
 
 // the last title bar colour from the page (0xRRGGBB)
