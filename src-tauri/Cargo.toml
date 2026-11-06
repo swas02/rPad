@@ -19,6 +19,10 @@ tauri-plugin-opener = "2"
 tauri-plugin-os = "2"
 tauri-plugin-persisted-scope = "2"
 
+# Title bar colour (DwmSetWindowAttribute). Same version as Tauri uses, so no second copy is built.
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.62", features = ["Win32_Foundation", "Win32_Graphics_Dwm"] }
+
 # Small, fast binary. Nothing here changes webview memory, but it keeps the Rust side negligible.
 [profile.release]
 opt-level = "s"

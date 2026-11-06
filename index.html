@@ -389,7 +389,8 @@
       const d = S.theme === "dark" || (S.theme === "auto" && DQ.matches), tc = document.querySelectorAll("meta[name=theme-color]"); document.documentElement.classList.toggle("dark", d);
       // on desktop the window title bar matches the menu bar (slate-100 / slate-950)
       const dk = matchMedia("(min-width:600px)").matches, L = paletteHex(S.pal, dk ? 100 : 50), D = paletteHex(S.pal, dk ? 950 : 900);
-      tc[0].content = S.theme === "dark" ? D : L; tc[1].content = S.theme === "light" ? L : D
+      tc[0].content = S.theme === "dark" ? D : L; tc[1].content = S.theme === "light" ? L : D;
+      if (DESK) TAU.caption(d ? D : L)
     }
     DQ.addEventListener("change", () => { if (S.theme === "auto") theme() });
     // relative time for switcher cards
@@ -890,7 +891,7 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
         ovx: () => closeT(i),
         nt: () => { if (!F[i].ok) return toast(`${F[i].n} is not connected`); add(i) },
         top: () => { S.top = !S.top; applyTop(); keep() },
-        fs: () => { PF = Math.max(6, Math.min(24, (PF ?? S.fs) + +b.dataset.d)); const on = PF !== S.fs; document.querySelectorAll(".pfv").forEach(e => e.textContent = PF); document.querySelectorAll("[data-a=fsa]").forEach(e => { e.disabled = !on; e.classList.toggle("opacity-40", !on); e.classList.toggle("!bg-violet-600", on); e.classList.toggle("!text-white", on) }) }, fsa: () => { S.fs = PF; PF = null; rf() }, tg: () => { if (v === "wrap") S.wrap = S.wrap === false; else if (v === "ts") S.ts = S.ts === false; else if (v === "spell") S.spell = S.spell === false; else if (v === "ce") S.ce = S.ce === false; else if (v === "nt") S.nt = !S.nt; else if (v === "logo") { S.logo = !S.logo; applyTop() } else S.ln = !S.ln; show(); if (shOpen()) setS() }, pal: () => { S.pal = v; theme(); show(); if (shOpen()) setS() }, th: () => { S.theme = v; theme(); show(); if (shOpen()) setS() }, ff: () => { S.font = v; show(); if (shOpen()) setS() },
+        fs: () => { PF = Math.max(6, Math.min(24, (PF ?? S.fs) + +b.dataset.d)); const on = PF !== S.fs; document.querySelectorAll(".pfv").forEach(e => e.textContent = PF); document.querySelectorAll("[data-a=fsa]").forEach(e => { e.disabled = !on; e.classList.toggle("opacity-40", !on); e.classList.toggle("!bg-violet-600", on); e.classList.toggle("!text-white", on) }) }, fsa: () => { S.fs = PF; PF = null; rf() }, tg: () => { if (v === "wrap") S.wrap = S.wrap === false; else if (v === "ts") S.ts = S.ts === false; else if (v === "spell") S.spell = S.spell === false; else if (v === "ce") S.ce = S.ce === false; else if (v === "nt") S.nt = !S.nt; else if (v === "pin") TAU.pin(S.pin = !S.pin); else if (v === "logo") { S.logo = !S.logo; applyTop() } else S.ln = !S.ln; show(); if (shOpen()) setS() }, pal: () => { S.pal = v; theme(); show(); if (shOpen()) setS() }, th: () => { S.theme = v; theme(); show(); if (shOpen()) setS() }, ff: () => { S.font = v; show(); if (shOpen()) setS() },
         thc: () => { S.theme = { auto: "light", light: "dark", dark: "auto" }[S.theme] || "auto"; theme(); show() },
         ap: () => { if (!S.sbh && (S.sp || "e") === v) S.sbh = 1; else { S.sbh = 0; S.sp = v } app.classList.toggle("sbh", !!S.sbh); show(); if (!S.sbh && v === "s") $("#sq").focus() },
         sf: () => { SF = i; SFO = 0; SSM = 0; show(); dScan(i) }, sfm: () => { SFO = !SFO; SSM = 0; show() }, ssm: () => { SSM = !SSM; SFO = 0; show() }, ss: () => { S.so = v; SSM = 0; keep(); show() }, fx: () => { const c = S.fc || (S.fc = []), k = c.indexOf(i); k < 0 ? c.push(i) : c.splice(k, 1); show() },
@@ -1096,7 +1097,7 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
         ["Find", 'data-a="mb" data-v="find"', "Ctrl+F"], ["Replace", 'data-a="mb" data-v="rpl"', "Ctrl+H"], ["Search all tabs", 'data-a="mb" data-v="sa"', "Ctrl+Shift+F"], "-",
         ["Clean up text…", 'data-a="cus"'], [cur().s ? "Unstar" : "Star", 'data-a="star"']],
       View: () => [["Command palette…", 'data-a="mb" data-v="cp"', "Ctrl+Shift+P"], ["Go to tab…", 'data-a="mb" data-v="qo"', "Ctrl+P"], "-", ...[["e", "Explorer"], ["s", "Search"], ["b", "Starred"], ["h", "History"]].map(([k, l]) => [l, `data-a="ap" data-v="${k}"`, "", !S.sbh && (S.sp || "e") === k]),
-        ["Sidebar", 'data-a="mb" data-v="sb"', "Ctrl+B", !S.sbh], "-",
+        ["Sidebar", 'data-a="mb" data-v="sb"', "Ctrl+B", !S.sbh], ...(DESK ? [["Keep on top", 'data-a="tg" data-v="pin"', "", !!S.pin]] : []), "-",
         ["Word wrap", 'data-a="tg" data-v="wrap"', "Alt+Z", S.wrap !== false], ["Line numbers", 'data-a="tg" data-v="ln"', "", !!S.ln], ["Spell check", 'data-a="tg" data-v="spell"', "", S.spell !== false], ["Remove empty files", 'data-a="tg" data-v="ce"', "", S.ce !== false], "-",
         ["Bigger text", 'data-a="mb" data-v="zi"', "Ctrl+="], ["Smaller text", 'data-a="mb" data-v="zo"', "Ctrl+−"],
         ["Monospace font", 'data-a="ff" data-v="mono"', "", (S.font || "mono") === "mono"], ["Sans font", 'data-a="ff" data-v="sans"', "", S.font === "sans"], "-",
@@ -1110,7 +1111,9 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
       `<button ${x[1]} role="menuitem" ${x[4] ? "disabled" : ""} class="flex h-7 w-full items-center gap-2 rounded px-2 text-left hover:bg-violet-600 hover:text-white disabled:pointer-events-none disabled:opacity-40 ${x[5] || ""}"><span class="w-4">${x[3] ? ic("chk", "size-3.5 stroke-[2.5]") : ""}</span><span class="flex-1 whitespace-nowrap">${x[0]}</span><span class="pl-8 text-[12px] opacity-60">${x[2] || ""}</span></button>`;
     function mbR() {
       // installed app: Windows already shows the app name and icon in its title bar (the browser tab shows the icon too)
-      document.title = SA.matches ? D(cur()) : D(cur()) + " · Rough Notepad";
+      // desktop app: note — folder — rPad, like VS Code. It also shows on the taskbar and in Alt+Tab.
+      const tt = DESK ? `${D(cur())} — ${F[cur().f].n} — rPad` : SA.matches ? D(cur()) : D(cur()) + " · Rough Notepad";
+      if (tt !== document.title) { document.title = tt; if (DESK) TAU.title(tt) }
       $("#mb").innerHTML = `<button data-a="mb" data-v="sb" aria-label="Toggle sidebar" title="Toggle sidebar (Ctrl+B)" aria-pressed="${!S.sbh}" class="grid h-full w-9 place-items-center text-slate-500 hover:bg-slate-200 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white">${ic("side", "size-4 stroke-2")}</button><span class="w-1"></span>` +
         Object.keys(MN).map(k => `<button data-a="mo" data-v="${k}" aria-haspopup="menu" aria-expanded="${MO === k}" class="${MBT}">${k}</button>`).join("") +
         `<div class="flex-1"></div>` +
@@ -1222,7 +1225,7 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
     const sbAuto = () => { if (!SBM.matches) { if (SBK === null) SBK = S.sbh; S.sbh = 1 } else if (SBK !== null) { S.sbh = SBK; SBK = null } app.classList.toggle("sbh", !!S.sbh) };
     sbAuto(); SBM.addEventListener("change", () => { sbAuto(); show() });
     addEventListener("hashchange", render);
-    theme(); applyTop(); render(); dSync();
+    theme(); applyTop(); render(); dSync(); if (DESK && S.pin) TAU.pin(true);
     // desktop: the editor takes keystrokes right away (on launch, on window focus, and when the empty area is clicked)
     if (DK.matches) {
       const grab = () => { const o = document.activeElement; if (!o || o === document.body) ed.focus() };

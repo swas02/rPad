@@ -5,6 +5,8 @@
   "windows": ["main"],
   "permissions": [
     "core:path:allow-join",
+    "core:window:allow-set-title",
+    "core:window:allow-set-always-on-top",
     "dialog:allow-open",
     "dialog:allow-ask",
     "fs:allow-read-dir",
