@@ -39,5 +39,21 @@
   window.applyPalette = applyPalette;
   window.paletteHex = (id, k) => hexOf(cur(id).n[k]);
   window.accentHex = (id, k) => hexOf(cur(id).a[k]);
-  applyPalette((function () { try { return JSON.parse(localStorage.getItem("sp-m1")).pal } catch (e) { } })());
+  // Before the first paint (this file loads in <head>): the saved palette and light/dark, so the boot cover (#boot) has the window colour.
+  const saved = (function () { try { return JSON.parse(localStorage.getItem("sp-m1")) || {} } catch (e) { return {} } })();
+  const html = document.documentElement, th = saved.theme || "auto";
+  applyPalette(saved.pal);
+  html.classList.toggle("dark", th === "dark" || (th === "auto" && matchMedia("(prefers-color-scheme:dark)").matches));
+  html.classList.add("boot");
+  // The page script calls bootDone() when the app is drawn: the cover fades out and (desktop) the hidden window is shown.
+  // If the page script fails, it runs by itself after 3 s, so the window never stays hidden.
+  let booted = false;
+  window.bootDone = function () {
+    if (booted) return; booted = true;
+    const c = document.getElementById("boot"), dur = parseFloat(getComputedStyle(html).getPropertyValue("--dur")) * 1000 || 0;
+    html.classList.remove("boot");
+    if (window.TauriAPI) window.TauriAPI.reveal();
+    if (c) { c.classList.add("out"); setTimeout(() => c.remove(), dur) }
+  };
+  setTimeout(window.bootDone, 3000);
 })();

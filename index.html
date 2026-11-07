@@ -28,6 +28,9 @@
   <style>
     /* Standard animation time and easing (linear) for the whole app: change it here only. JS reads it too (see DUR). */
     :root { --dur: .15s }
+    /* transition-property defaults to "all": without this zero-specificity reset, the global duration below animates every style change
+       (CodeMirror's spacer heights, gutter rows, cursor layer) and the editor jitters on fast scroll. Elements that set a transition still win. */
+    :where(*, ::before, ::after) { transition-property: none }
     *, ::before, ::after { transition-duration: var(--dur) !important; transition-timing-function: linear !important }
     /* Windows layout (VS Code style): activity bar | sidebar | editor, status bar along the bottom */
     /* Phone look: pill tabs, brighter chrome icons and counter (desktop overrides below) */
@@ -154,14 +157,6 @@
   @media (hover:hover) and (pointer:fine){
     #ed .cm-scroller::-webkit-scrollbar{width:14px;height:14px;background:transparent}
     #ed .cm-scroller::-webkit-scrollbar-track,#ed .cm-scroller::-webkit-scrollbar-corner{background:transparent}
-    @keyframes tclK{to{opacity:0;transform:scale(.9)}} .tcl{animation:tclK var(--dur) linear forwards;pointer-events:none}
-@keyframes pclK{to{opacity:0;transform:translateY(6px)}} .pcl{animation:pclK var(--dur) linear forwards}
-@keyframes svP{45%{transform:scale(.6);opacity:.3}} .sv{animation:svP var(--dur) linear}
-    @keyframes shF{from{opacity:0}} @keyframes shU{from{transform:translateY(100%)}} @keyframes shP{from{opacity:0;transform:translateY(-10px) scale(.97)}}
-    #sh{overflow:hidden;overscroll-behavior:contain} #sh.flex{animation:shF var(--dur) linear} #sh.flex #sheet{animation:shU var(--dur) linear}
-    #sh.out{animation:shF var(--dur) linear reverse forwards} #sh.out #sheet{animation:shU var(--dur) linear reverse forwards}
-    @media (min-width:600px){#sh.flex #sheet{animation:shP var(--dur) linear} #sh.out #sheet{animation:shP var(--dur) linear reverse forwards}}
-    @media (prefers-reduced-motion:reduce){#sh,#sh #sheet{animation:none!important}}
     #ed .cm-scroller::-webkit-scrollbar-thumb{background:rgb(var(--n500)/.3);border:3px solid transparent;background-clip:padding-box;border-radius:7px;min-height:40px;min-width:40px;transition:background-color var(--dur)}
     #ed .cm-scroller:hover::-webkit-scrollbar-thumb{background-color:rgb(var(--n500)/.45)}
     #ed .cm-scroller::-webkit-scrollbar-thumb:hover{background-color:rgb(var(--n500)/.75)}
@@ -169,6 +164,20 @@
     #ed .cm-scroller::-webkit-scrollbar-button{display:none}
     @supports not selector(::-webkit-scrollbar){#ed .cm-scroller{scrollbar-width:thin;scrollbar-color:rgb(var(--n500)/.5) transparent}}
   }
+  /* App animations (all devices). Reduced motion: --dur is 0, so every transition and animation ends at once. */
+  @keyframes tclK{to{opacity:0;transform:scale(.9)}} .tcl{animation:tclK var(--dur) linear forwards;pointer-events:none}
+  @keyframes pclK{to{opacity:0;transform:translateY(6px)}} .pcl{animation:pclK var(--dur) linear forwards}
+  @keyframes svP{45%{transform:scale(.6);opacity:.3}} .sv{animation:svP var(--dur) linear}
+  @keyframes shF{from{opacity:0}} @keyframes shU{from{transform:translateY(100%)}} @keyframes shP{from{opacity:0;transform:translateY(-10px) scale(.97)}}
+  #sh{overflow:hidden;overscroll-behavior:contain} #sh.flex{animation:shF var(--dur) linear} #sh.flex #sheet{animation:shU var(--dur) linear}
+  #sh.out{animation:shF var(--dur) linear reverse forwards} #sh.out #sheet{animation:shU var(--dur) linear reverse forwards}
+  @media (min-width:600px){#sh.flex #sheet{animation:shP var(--dur) linear} #sh.out #sheet{animation:shP var(--dur) linear reverse forwards}}
+  @media (prefers-reduced-motion:reduce){:root{--dur:0s}}
+  /* Launch: a cover in the window colour hides the page until the page script has drawn it (bootDone() in src/themes.js); nothing animates meanwhile */
+  html.boot *,html.boot ::before,html.boot ::after{transition:none!important;animation:none!important}
+  #boot{position:fixed;inset:0;z-index:100;background:rgb(var(--n50))} .dark #boot{background:rgb(var(--n900))}
+  @media (min-width:600px){#boot{background:rgb(var(--n200))} .dark #boot{background:rgb(var(--n950))}}
+  #boot.out{animation:shF var(--dur) linear reverse forwards;pointer-events:none}
 #sheet::-webkit-scrollbar,.overflow-y-auto::-webkit-scrollbar{width:8px;background:transparent}#sheet::-webkit-scrollbar-thumb,.overflow-y-auto::-webkit-scrollbar-thumb{background:rgb(var(--n500)/.45);border-radius:4px}#sheet::-webkit-scrollbar-thumb:hover,.overflow-y-auto::-webkit-scrollbar-thumb:hover{background:rgb(var(--n500)/.8)}#sheet::-webkit-scrollbar-button,.overflow-y-auto::-webkit-scrollbar-button{display:none}
 #cmh{position:absolute;inset:0}
 #ed .cm-editor{height:100%;font-size:var(--fs,17px);font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
@@ -195,6 +204,7 @@
 
 <body
   class="m-0 h-full bg-slate-200 font-sans text-[15px] leading-snug text-slate-900 [-webkit-tap-highlight-color:transparent] dark:bg-slate-950 dark:text-slate-100">
+  <div id="boot" aria-hidden="true"></div>
   <div id="app"
     class="relative flex h-dvh w-full flex-col overflow-hidden bg-slate-50 pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] dark:bg-slate-900">
     <div id="mb" role="menubar" aria-label="Menu"
@@ -982,7 +992,9 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
     function startDrag() {
       const st = $("#tabs"); LP.drag = true; LP.moved = false; LP.to = LP.i; LP.sl = st.scrollLeft;
       LP.els = [...st.querySelectorAll(".tab")]; LP.rc = LP.els.map(e => [e.offsetLeft, e.offsetWidth]);
-      st.style.overflowX = "hidden"; LP.el.classList.add("z-10", "opacity-80"); navigator.vibrate && navigator.vibrate(12)
+      st.style.overflowX = "hidden"; LP.el.classList.add("z-10", "opacity-80"); navigator.vibrate && navigator.vibrate(12);
+      // the other tabs slide out of the way; the dragged tab has no transition, so it stays under the pointer
+      LP.els.forEach((el, k) => { if (k !== LP.i) el.style.transitionProperty = "transform" })
     }
     function moveDrag(e) {
       const st = $("#tabs"), r = st.getBoundingClientRect();
@@ -1326,6 +1338,8 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
     sbAuto(); SBM.addEventListener("change", () => { sbAuto(); show() });
     addEventListener("hashchange", render);
     theme(); applyTop(); render(); dSync(); if (DESK && S.pin) TAU.pin(true);
+    // launch: lay the page out (that starts the font downloads it needs), wait for the fonts, then remove the boot cover
+    void document.body.offsetWidth; document.fonts.ready.then(bootDone, bootDone);
     // desktop: the editor takes keystrokes right away (on launch, on window focus, and when the empty area is clicked)
     if (DK.matches) {
       const grab = () => { const o = document.activeElement; if (!o || o === document.body) ed.focus() };

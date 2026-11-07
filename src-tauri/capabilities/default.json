@@ -7,6 +7,8 @@
     "core:path:allow-join",
     "core:window:allow-set-title",
     "core:window:allow-set-always-on-top",
+    "core:window:allow-show",
+    "core:window:allow-set-focus",
     "dialog:allow-open",
     "dialog:allow-ask",
     "fs:allow-read-dir",
