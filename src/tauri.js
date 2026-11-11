@@ -26,7 +26,11 @@ export const onOpen = cb => {
   listen("open-paths", take).catch(() => {});
   take();
 };
-export const dialog = { open, ask };
+// "Open in new window": a new rPad process opens the file (see new_window() in src-tauri/src/lib.rs)
+export const newWindow = path => invoke("new_window", { path });
+// Subfolder: the user expands a subfolder, so it gets access like its parent (see allow_subdir() in src-tauri/src/lib.rs)
+export const allowSubdir = path => invoke("allow_subdir", { path });
+export const dialog ={ open, ask };
 export const path = { join };
 export const opener = { revealItemInDir };
 export const os = { platform };

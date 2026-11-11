@@ -10,6 +10,7 @@ rPad is a plain-text notepad. This file lists every interface a script, the OS o
 | `rpad` | Starts rPad, or focuses the running window. |
 | `rpad <file>:<line>[:<col>]` | Opens the file and puts the cursor on the line (and column). |
 | `rpad -n`, `rpad --new` | Opens a new empty note. |
+| `rpad -w <path>`, `rpad --new-window <path>` | Starts a new rPad process (its own window) and opens the paths there. It does not use the running window. |
 | `rpad -` | Opens a new note with the text from stdin: `type a.txt \| rpad -`. |
 | `rpad -V`, `rpad --version` | Prints the version. |
 | `rpad -h`, `rpad --help` | Prints the help. |

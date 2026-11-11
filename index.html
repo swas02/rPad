@@ -366,11 +366,20 @@
     // Setting "Start with a new note": at start, open an empty Scratchpad note and show it
     if (S.sn && !S.tabs.some(x => x.f === 0 && !x.fp && !x.t && !x.n)) { S.tabs.push({ t: "", f: 0 }); S.cur = S.tabs.length - 1 } S.cur = Math.min(Math.max(+S.cur || 0, 0), S.tabs.length - 1);
     S.closed = (S.closed || []).filter(x => F[x.f]);
+    // A window from `rpad -w` (or "Open in new window") shows none of the old tabs, only what it opens itself. This is cosmetic: the page storage still holds
+    // the tabs of the other window. This window writes only its own tabs into the list (keepOthers), and it does not merge from the other window (see pull).
+    const BLANK = !!window.RPAD_BLANK, mine = new Set();
+    if (BLANK) { S.tabs = [{ t: "", f: 0 }]; S.cur = 0 }
+    const keepOthers = () => {
+      let r; try { r = JSON.parse(localStorage.getItem("sp-m1")) } catch (e) { }
+      S.tabs.forEach(x => mine.add(x.id));
+      return { ...S, closed: (r && r.closed) || S.closed, tabs: [...((r && r.tabs) || []).filter(x => !mine.has(x.id)), ...S.tabs.filter(x => x.fp || x.t.trim() || x.n)] }
+    };
     // Auto-save (keep() for notes, dSave() for disk files): the save starts AUTO ms after the last change (the standard debounce). keep() waits, then flush() writes the notes to the page storage; the dot pulses once the write is done (see dPulse)
     // AUTO_MAX: a fast typist never pauses for 1 s, so a save never waits more than AUTO_MAX ms from the first change not saved yet (since)
     const AUTO = 1000, AUTO_MAX = 2000, aWait = since => Math.max(0, Math.min(AUTO, since + AUTO_MAX - Date.now()));
     // kP: the note whose text changed since the last flush; only it pulses (a disk file pulses when its disk write is done, see dWrite; other changes, such as a tab switch, do not pulse)
-    let kT = 0, kQ = 0, kP = null; const flush = () => { clearTimeout(kT); kT = 0; kQ = 0; try { const ch = pull(); S.tabs.forEach(tid); localStorage.setItem("sp-m1", JSON.stringify(S)); kSnap(); ch && setTimeout(() => show(true)); kP && dPulse(kP) } catch (e) { } kP = null }, keep = () => { clearTimeout(kT); kQ ||= Date.now(); kT = setTimeout(flush, aWait(kQ)) };
+    let kT = 0, kQ = 0, kP = null; const flush = () => { clearTimeout(kT); kT = 0; kQ = 0; try { const ch = pull(); S.tabs.forEach(tid); localStorage.setItem("sp-m1", JSON.stringify(BLANK ? keepOthers() : S)); kSnap(); ch && setTimeout(() => show(true)); kP && dPulse(kP) } catch (e) { } kP = null }, keep = () => { clearTimeout(kT); kQ ||= Date.now(); kT = setTimeout(flush, aWait(kQ)) };
     addEventListener("pagehide", () => kT && flush()); addEventListener("visibilitychange", () => kT && flush()); addEventListener("blur", () => kT && flush()); // save at once when the window loses focus
     const cur = () => S.tabs[S.cur];
     // hash routes: #/note/<id>  #/tabs  #/folders  #/folders/<n>  #/starred
@@ -387,6 +396,7 @@
     let kB = new Map(), kK = new Set(), kC = "";
     const kSnap = () => { S.tabs.forEach(tid); kB = new Map(S.tabs.filter(x => !x.fp).map(x => [x.id, x.t])); kK = new Set(kB.keys()); kC = JSON.stringify(S.closed || []) };
     const pull = render => {
+      if (BLANK) return false;
       let r; try { r = JSON.parse(localStorage.getItem("sp-m1")) } catch (e) { return false }
       if (!r || !r.tabs) return false;
       S.tabs.forEach(tid); const c = cur(), ids = new Set(); let ch = false;
@@ -646,10 +656,12 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
         }));
         return v.sort((a, b) => { const x = a.name.toLowerCase(), y = b.name.toLowerCase(); return x < y ? -1 : x > y ? 1 : 0 });
       },
+      // names of the subfolders (one level, no hidden ones); a subfolder is read only when the user expands it
+      list_dirs: async ({ dir }) => (await TAU.fs.readDir(dir)).filter(e => e.isDirectory && !e.name.startsWith(".")).map(e => e.name).sort((a, b) => { const x = a.toLowerCase(), y = b.toLowerCase(); return x < y ? -1 : x > y ? 1 : 0 }),
       read_text: async ({ dir, name }) => {
         const p = await dP(dir, name); if ((await TAU.fs.stat(p)).size > MAXB) throw "big";
-        let text; try { text = new TextDecoder("utf-8", { fatal: true }).decode(await TAU.fs.readFile(p)) } catch { throw "binary" }
-        return { text, mtime: await dM(p) };
+        // "binary": a NUL byte in the file (not text). "enc": text in a format other than UTF-8 (UTF-16 or an old code page).
+        const b = await TAU.fs.readFile(p); let text; try { text = new TextDecoder("utf-8", { fatal: true }).decode(b) } catch { throw (b[0] === 0xFF && b[1] === 0xFE) || (b[0] === 0xFE && b[1] === 0xFF) || !b.includes(0) ? "enc" : "binary" }        return { text, mtime: await dM(p) };
       },
       // createOnly: never replace a file. expect: the modified time we last saw; if the file has another time now, another app changed it, so throw "changed".
       // An existing file is replaced in one step (temp file, then rename), so a crash while writing cannot leave half a file. The temp name starts with "." (the list hides it).
@@ -671,11 +683,33 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
     const splitN = nm => { const m = nm.match(/^(.+)\.([a-z0-9_+-]{1,10})$/i); return m && /[a-z]/i.test(m[2]) ? [m[1], m[2].toLowerCase()] : [nm, ""] };
     const dBase = p => p.split(/[\\/]/).filter(Boolean).pop() || p, dFix = s => s.replace(/\r\n?/g, "\n");
     // text = the Rust side found it readable as UTF-8 text (any extension). Everything else is hidden unless Settings > Show non-text files is on.
-    const dVis = k => (DL[F[k].p] || []).filter(e => S.nt || e.text);
+    const dVisP = p => (DL[p] || []).filter(e => S.nt || e.text), dVis = k => dVisP(F[k].p);
+    // Subfolders: DD (folder path -> subfolder names) fills with DL. SXD = the subfolders the user expanded in this window; one is read only when it is expanded.
+    const DD = {}, SXD = new Set(), dJ = (d, n) => d.replace(/[\\/]+$/, "") + (d.includes("\\") ? "\\" : "/") + n;
     const dTabs = k => S.tabs.some(x => x.f === k && x.fp);
     function dScan(k) {
-      const f = F[k]; if (!TAU || !f || !f.d) return Promise.resolve();
-      return inv("list_dir", { dir: f.p }).then(v => { DL[f.p] = v; DE[f.p] = "" }, e => { DL[f.p] = []; DE[f.p] = String(e) }).then(() => { const n = $("#nl"); if (n && DK.matches) n.innerHTML = nlA(); if (OG === k && app.classList.contains("insw")) ovL() })
+      const f = F[k]; return !TAU || !f || !f.d ? Promise.resolve() : dScanP(f.p)
+    }
+    // scan one folder by its path (a Library folder or an expanded subfolder): files and subfolder names
+    function dScanP(p) {
+      return Promise.all([inv("list_dir", { dir: p }), inv("list_dirs", { dir: p })]).then(([v, d]) => { DL[p] = v; DD[p] = d; DE[p] = "" }, e => { DL[p] = []; DD[p] = []; DE[p] = String(e) }).then(() => { const n = $("#nl"); if (n && DK.matches) n.innerHTML = nlA(); if (OG >= 0 && F[OG] && F[OG].p === p && app.classList.contains("insw")) ovL(); dWatch() })
+    }
+    // Desktop: the names of a folder stay in memory (DL, from dScan). Each folder that is listed or has an open tab is watched (official fs plugin, `watch`).
+    // When something in it changes (add, remove, rename, edit), only that folder is scanned again and its open files are checked. dSync (window focus) stays as the backup.
+    const dWs = new Map(); // folder path -> the function that stops its watch (0 while the watch starts)
+    function dWatch() {
+      if (!DESK) return;
+      const want = new Set([...F.filter((f, k) => f.d && (SX.has(k) || dTabs(k))).map(f => f.p), ...SXD]);
+      for (const [p, u] of dWs) if (!want.has(p)) { dWs.delete(p); u && u() }
+      for (const p of want) if (!dWs.has(p)) {
+        dWs.set(p, 0);
+        TAU.fs.watch(p, () => dChanged(p), { recursive: false, delayMs: 300 }).then(u => dWs.get(p) === 0 ? dWs.set(p, u) : u(), () => dWs.delete(p))
+      }
+    }
+    async function dChanged(p) {
+      await dScanP(p);
+      for (const t of S.tabs) if (t.fp && F[t.f] && F[t.f].d && F[t.f].p === p) { await dIdle(t); await dChk(t, 1) } // our own save is done before the check, so it is not "changed by another app"
+      show(true)
     }
     // the dot before the tab name pulses once, when a save is done (class sv, see the CSS)
     const dB = new Map(); // tabs that are being written now -> the write (a promise)
@@ -802,7 +836,8 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
       } catch (e) { toast(e?.w ? `Cannot write to ${b.n}. ${e.w}` : "Cannot move the file. " + dWhy(e)) }
       finally { dMv.delete(t); if (!t.fp || t.t !== t.ds) dSave(t) }
     }
-    const dErr = e => toast(e === "binary" ? "This is not a text file" : e === "big" ? "The file is too large. The maximum size is 5 MB." : "Cannot open the file");
+    // name: the file that did not open, so a toast for several files says which one failed
+    const dErr = (e, name) => toast(e === "binary" ? `${name} is not a text file` : e === "enc" ? `${name} is not UTF-8 text. rPad opens only UTF-8 text.` : e === "big" ? `${name} is too large. The maximum size is 5 MB.` : dCode(e) === 2 || dCode(e) === 3 ? `Cannot find ${name}` : `Cannot open ${name}. ${dWhy(e)}`);
     // done: runs once the file is open (History uses it to drop its entry only when the file opened)
     const dOpening = [];
     function dOpen(k, name, done) {
@@ -812,7 +847,7 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
       const w = dOpening.find(same); if (w) return w.p.then(() => dOpen(k, name, done), () => 0)
       const t = { t: "", f: k, fp: name }; [t.n, t.x] = splitN(name);
       const o = { f: k, fp: name, p: dRead(t) }; dOpening.push(o);
-      o.p.then(() => { done?.(); S.tabs.push(t); toRecent(t); setH("#note-" + tid(t)); render() }, dErr).finally(() => dOpening.splice(dOpening.indexOf(o), 1))
+      o.p.then(() => { done?.(); if (BLANK && S.tabs.length === 1 && !S.tabs[0].fp && !S.tabs[0].t && !S.tabs[0].n) S.tabs.length = 0; /* the empty start note of a new window */ S.tabs.push(t); toRecent(t); setH("#note-" + tid(t)); render(); dWatch() }, e => dErr(e, name)).finally(() => dOpening.splice(dOpening.indexOf(o), 1))
     }
     // the window got focus: pick up files added, removed or edited by other apps
     let dBusy = 0;
@@ -1005,6 +1040,9 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
         tstar: () => { const x = S.tabs[i]; x.s = !x.s; close(); afterTabs(); toast(x.s ? "Star added" : "Star removed") },
         tmv: () => tmvS(i), tf: () => { close(); if (!F[+v].ok) return toast(`${F[+v].n} is not connected`); dMove(S.tabs[i], +v) },
         tdup: () => { const x = S.tabs[i]; S.tabs.splice(i + 1, 0, { t: x.t, f: x.f, n: x.n && x.n + " copy", x: x.x }); if (S.cur > i) S.cur++; dSave(S.tabs[i + 1]); close(); afterTabs(); toast("rPad made a copy of the note") },
+        // a file of the list (or the folder itself when there is no name) opens in a new rPad process
+        lwin: async () => { close(); try { await TAU.newWindow(v ? await dP(F[SF].p, v) : F[SF].p) } catch { toast("Cannot open a new window") } },
+        twin: async () => { const t = S.tabs[i], f = F[t.f]; close(); try { await dIdle(t); if (!await dWrite(t)) return toast("Cannot save the file, so rPad cannot open it in a new window"); await TAU.newWindow(await dP(f.p, t.fp)) } catch { toast("Cannot open a new window") } },
         tnew: () => { const h = "#note-" + tid(S.tabs[i]); close(); flush(); window.open(location.href.split("#")[0] + h, "_blank") },
         tcopy: () => { close(); (navigator.clipboard ? navigator.clipboard.writeText(S.tabs[i].t) : Promise.reject()).then(() => toast("The text is copied"), () => toast("Cannot copy the text")) },
         tdl: () => { const t = S.tabs[i]; if (t) { dlF(fileOf(t), t.t); toast(`rPad downloaded ${fileOf(t)}`) } },
@@ -1041,6 +1079,9 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
         fs: () => { PF = Math.max(6, Math.min(24, (PF ?? S.fs) + +b.dataset.d)); const on = PF !== S.fs; document.querySelectorAll(".pfv").forEach(e => e.textContent = PF); document.querySelectorAll("[data-a=fsa]").forEach(e => { e.disabled = !on; e.classList.toggle("opacity-40", !on); e.classList.toggle("!bg-violet-600", on); e.classList.toggle("!text-white", on) }) }, fsa: () => { S.fs = PF; PF = null; rf() }, tg: () => { if (v === "wrap") S.wrap = S.wrap === false; else if (v === "ts") S.ts = S.ts === false; else if (v === "spell") S.spell = S.spell === false; else if (v === "ce") S.ce = S.ce === false; else if (v === "nt") S.nt = !S.nt; else if (v === "sn") S.sn = !S.sn; else if (v === "ca") S.ca = !S.ca; else if (v === "pin") TAU.pin(S.pin = !S.pin); else if (v === "logo") { S.logo = !S.logo; applyTop() } else S.ln = !S.ln; show(); if (shOpen()) setS() }, pal: () => { S.pal = v; theme(); show(); if (shOpen()) setS() }, th: () => { S.theme = v; theme(); show(); if (shOpen()) setS() }, ff: () => { S.font = v; show(); if (shOpen()) setS() },
         thc: () => { S.theme = { auto: "light", light: "dark", dark: "auto" }[S.theme] || "auto"; theme(); show() },
         ap: () => { if (app.classList.contains("insw")) { swv(false); S.sbh = 1 } if (!S.sbh && (S.sp || "e") === v) S.sbh = 1; else { S.sbh = 0; S.sp = v } app.classList.toggle("sbh", !!S.sbh); show(); if (!S.sbh && v === "s") $("#sq").focus() },
+        // a subfolder opens or closes; when it opens, it is read now (and gets access first)
+        dopenp: () => dFiles([v]),
+        sd: () => { if (SXD.has(v)) { SXD.delete(v); dWatch(); return show() } SXD.add(v); show(); TAU.allowSubdir(v).then(() => dScanP(v), () => { DL[v] = []; DD[v] = []; DE[v] = "No access"; $("#nl") && DK.matches && ($("#nl").innerHTML = nlA()) }) },
         sf: () => { SF = i; SSM = 0; SX.has(i) ? SX.delete(i) : SX.add(i); show(); if (SX.has(i) && i >= 0) dScan(i) }, sfm: () => { SFO = !SFO; SSM = 0; show() }, ssm: () => { SSM = !SSM; SFO = 0; show() }, ss: () => { S.so = v; SSM = 0; keep(); show() }, fx: () => { const c = S.fc || (S.fc = []), k = c.indexOf(i); k < 0 ? c.push(i) : c.splice(k, 1); show() },
         so: () => sOpen(i, +v), mb: () => MBA[v](i), mo: () => mbOpen(v), hb: () => { HB = v || (HB ? "" : "/"); hbR() },
         ren: () => { rnT(t, $("#rn").value); close(); show() },
@@ -1115,6 +1156,21 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
     // the Library list: filtered by folder and name, then recently closed notes
     // a closed note or a file that isn't open: faint, full colour on hover
     const FNT = "opacity-50 hover:opacity-100";
+    // the subfolders of disk folder p as rows (folders first). An open one shows its own subfolders and files: they are read when the user expands it.
+    // A file there opens in place (data-a="dopenp"); an open file shows as a tab row.
+    const dDirs = (p, cf, q) => (DD[p] || []).filter(n => !q || n.toLowerCase().includes(q) || SXD.has(dJ(p, n))).map(n => {
+      const sp = dJ(p, n), ex = SXD.has(sp);
+      return `<div><button data-a="sd" data-v="${esc(sp)}" aria-expanded="${ex}" title="${esc(n)}" class="flex h-8 w-full min-w-0 items-center gap-2.5 rounded-md px-3 text-left hover:bg-slate-500/5"><span class="ni ${tx(cf)}">${ic("fold", "size-4 stroke-2")}</span><span class="min-w-0 flex-1 truncate">${esc(n)}</span>${ic("chev", "size-4 shrink-0 stroke-2 text-slate-400 transition-transform " + (ex ? "" : "-rotate-90"))}</button>${ex ? `<div class="pl-4">${dSub(sp, cf, q)}</div>` : ""}</div>`
+    }).join("");
+    function dSub(p, cf, q) {
+      const msg = m => `<div class="px-3 py-2 text-slate-500 dark:text-slate-400">${m}</div>`;
+      if (!DL[p]) return msg("Loading…"); if (DE[p]) return msg("Cannot read this folder.");
+      const fs = dVisP(p).filter(e => !q || e.name.toLowerCase().includes(q)).map(e => {
+        const i = S.tabs.findIndex(x => x.fp && x.fp.toLowerCase() === e.name.toLowerCase() && F[x.f] && F[x.f].d && F[x.f].p.toLowerCase() === p.toLowerCase());
+        return i >= 0 ? fRow(S.tabs[i], i) : `<div class="rounded-md hover:bg-slate-500/5"><button data-a="dopenp" data-v="${esc(dJ(p, e.name))}" title="${esc(e.name)}" class="flex h-8 w-full min-w-0 items-center gap-2.5 px-3 text-left ${FNT}"><span class="ni ${tx(cf)}">${ic("doc", "size-4 stroke-2")}</span><span class="truncate">${esc(e.name)}</span></button></div>`
+      });
+      return dDirs(p, cf, q) + fs.join("") || msg(q ? "No matches." : "Empty folder.")
+    }
     function nlR(k = SF, Q = NQ) {
       const q = Q.trim().toLowerCase(), ok = x => (k < 0 || x.f === k) && (!q || D(x).toLowerCase().includes(q));
       const cf = k >= 0 ? F[k] : null;
@@ -1122,7 +1178,7 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
         const l = DL[cf.p], er = DE[cf.p], nt = S.tabs.map((x, i) => [x, i]).filter(r => r[0].f === k && !r[0].fp && ok(r[0])), msg = m => `<div class="px-3 py-2 text-slate-500 dark:text-slate-400">${m}</div>`;
         if (!l) return msg("Loading…"); if (er) return msg("Cannot read this folder. Possibly, the folder moved or someone deleted it.");
         const fs = dVis(k).filter(e => !q || e.name.toLowerCase().includes(q)).map(e => { const i = S.tabs.findIndex(x => x.f === k && x.fp === e.name); return i >= 0 ? fRow(S.tabs[i], i) : `<div class="rounded-md hover:bg-slate-500/5"><button data-a="dopen" data-i="${k}" data-v="${esc(e.name)}" title="${esc(e.name)}" class="flex h-8 w-full min-w-0 items-center gap-2.5 px-3 text-left ${FNT}"><span class="ni ${tx(cf)}">${ic("doc", "size-4 stroke-2")}</span><span class="truncate">${esc(e.name)}</span></button></div>` });
-        return (nt.map(([x, i]) => fRow(x, i)).concat(fs).join("")) || msg(q ? "No matches." : "No files in this folder.")
+        return (nt.map(([x, i]) => fRow(x, i)).join("") + dDirs(cf.p, cf, q) + fs.join("")) || msg(q ? "No matches." : "No files in this folder.")
       }
       const xs = S.tabs.map((x, i) => [x, i]).filter(r => ok(r[0])); const so = SRT.find(r => r[0] === S.so);
       // a closed note: the same row as a file in a disk folder that isn't open (Scratchpad is a folder too, kept inside rPad). Click opens it.
@@ -1352,7 +1408,7 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
     function cxOpen(i, px, py) {
       const x = S.tabs[i], d = `data-i="${i}"`;
       cx.innerHTML = [["Close", `data-a="tcl" ${d}`], ["Close others", `data-a="tco" ${d}`, "", 0, S.tabs.length < 2], ["Close all", 'data-a="tca"'], "-",
-        ["Rename…", `data-a="mb" data-v="ren" ${d}`, "F2"], ["Move to folder…", `data-a="tmv" ${d}`], ["Duplicate", `data-a="tdup" ${d}`], ["Open in new tab", `data-a="tnew" ${d}`], ["Copy text", `data-a="tcopy" ${d}`],
+        ["Rename…", `data-a="mb" data-v="ren" ${d}`, "F2"], ["Move to folder…", `data-a="tmv" ${d}`], ["Duplicate", `data-a="tdup" ${d}`], ["Open in new tab", `data-a="tnew" ${d}`], ...(DESK && x.fp && F[x.f].d ? [["Open in new window", `data-a="twin" ${d}`]] : []),["Copy text", `data-a="tcopy" ${d}`],
         ["Download as " + (dx(x) || "file"), `data-a="tdl" ${d}`], ["Clean up text…", `data-a="tcu" ${d}`],
         [x.s ? "Unstar" : "Star", `data-a="tstar" ${d}`], ...(F[x.f].d ? [["Show non-text files", 'data-a="tg" data-v="nt"', "", !!S.nt]] : []), ...(DESK && x.fp && F[x.f].d ? [["Show in folder", `data-a="rev" ${d}`, "Shift+Alt+R"]] : []), "-", ["Delete file", `data-a="mb" data-v="del" ${d}`, "", 0, 0, "text-red-600 dark:text-red-400"]].map(it).join("");
       cx.style.display = "block"; const r = cx.getBoundingClientRect();
@@ -1360,7 +1416,7 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
     }
     // right-click on a file (or empty space) in a disk folder's list
     function cxList(px, py, name) {
-      cx.innerHTML = [name ? ["Show in folder", `data-a="rev" data-v="${esc(name)}"`] : ["Show folder in File Explorer", `data-a="revf" data-i="${SF}"`], "-", ["Show non-text files", 'data-a="tg" data-v="nt"', "", !!S.nt], ["Refresh", 'data-a="dref"'], "-", ["Open folder…", 'data-a="nf"']].map(it).join("");
+      cx.innerHTML = [name ? ["Show in folder", `data-a="rev" data-v="${esc(name)}"`] : ["Show folder in File Explorer", `data-a="revf" data-i="${SF}"`], ["Open in new window", `data-a="lwin" data-v="${esc(name || "")}"`], "-", ["Show non-text files", 'data-a="tg" data-v="nt"', "", !!S.nt], ["Refresh", 'data-a="dref"'], "-", ["Open folder…", 'data-a="nf"']].map(it).join("");
       cx.style.display = "block"; const r = cx.getBoundingClientRect();
       cx.style.left = Math.min(px, innerWidth - r.width - 4) + "px"; cx.style.top = Math.min(py, innerHeight - r.height - 4) + "px"
     }

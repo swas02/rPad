@@ -20,14 +20,18 @@ pub fn run() {
         let mut t = String::new();
         if std::io::stdin().read_to_string(&mut t).is_ok() { let _ = std::fs::write(stdin_file(), t); }
     }
-    tauri::Builder::default()
-        // Open API, one path for every way to start rPad: `rpad file.txt folder`, "Open with" and double-click in Explorer.
-        // A second start does not open a second app: it sends its arguments to the running one and exits (single-instance).
-        // It must be the first plugin.
-        .plugin(tauri_plugin_single_instance::init(|app, args, cwd| {
+    let blank = args.iter().any(|a| a == "-w" || a == "--new-window");
+    let mut b = tauri::Builder::default();
+    // Open API, one path for every way to start rPad: `rpad file.txt folder`, "Open with" and double-click in Explorer.
+    // A second start does not open a second app: it sends its arguments to the running one and exits (single-instance).
+    // It must be the first plugin. With -w / --new-window the start skips it, so it stays as its own new window.
+    if !blank {
+        b = b.plugin(tauri_plugin_single_instance::init(|app, args, cwd| {
             queue(app, args.iter().skip(1), Path::new(&cwd));
             if let Some(w) = app.get_webview_window("main") { let _ = w.unminimize(); let _ = w.show(); let _ = w.set_focus(); }
-        }))
+        }));
+    }
+    b
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_persisted_scope::init())
@@ -35,12 +39,16 @@ pub fn run() {
         .plugin(tauri_plugin_os::init())
         .manage(Caption(Mutex::new(None)))
         .manage(Pending(Mutex::new(vec![])))
-        .setup(|app| {
+        .setup(move |app| {
+            // The window comes from tauri.conf.json ("create": false). A window from -w starts without the old tabs: the page reads window.RPAD_BLANK.
+            let mut w = tauri::WebviewWindowBuilder::from_config(app, &app.config().app.windows[0])?;
+            if blank { w = w.initialization_script("window.RPAD_BLANK = true") }
+            w.build()?;
             // the arguments of this start; the page is not ready yet, so they wait in Pending until the page calls take_open
             queue(app.handle(), std::env::args().skip(1), &std::env::current_dir().unwrap_or_default());
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![caption, pick_files, history_add, history_remove, take_open])
+        .invoke_handler(tauri::generate_handler![caption, pick_files, history_add, history_remove, take_open, new_window, allow_subdir])
         // the window gets or loses focus: paint the title bar again (the title text is grey when the window is not active)
         .on_window_event(|w, e| {
             if let tauri::WindowEvent::Focused(f) = e {
@@ -60,6 +68,7 @@ Usage: rpad [options] [path[:line[:col]]]...
   file:line:col    open the file and go to the line (and column)
   -                new note with the text from stdin (cat a.txt | rpad -)
   -n, --new        new empty note
+  -w, --new-window open in a new window (a new rPad process), not in the running one
   -V, --version    print the version
   -h, --help       print this help
 
@@ -135,6 +144,24 @@ fn queue(app: &tauri::AppHandle, args: impl IntoIterator<Item = impl AsRef<str>>
     if items.is_empty() { return }
     app.state::<Pending>().0.lock().unwrap().extend(items);
     let _ = app.emit("open-paths", ());
+}
+
+// "Open in new window": starts rPad again with -w, so the file opens in its own process and window.
+#[tauri::command]
+fn new_window(path: String) -> Result<(), String> {
+    let exe = std::env::current_exe().map_err(|e| e.to_string())?;
+    std::process::Command::new(exe).arg("-w").arg(path).spawn().map(|_| ()).map_err(|e| e.to_string())
+}
+
+// Subfolder: when the user expands a subfolder of a folder that already has access, the subfolder gets access too (not its own subfolders).
+// The page cannot name any other folder: the parent must be in the fs scope already, and the path must have no "..".
+#[tauri::command]
+fn allow_subdir(app: tauri::AppHandle, path: String) -> Result<(), String> {
+    use tauri_plugin_fs::FsExt;
+    let p = std::path::PathBuf::from(&path);
+    let bad = p.components().any(|c| matches!(c, std::path::Component::ParentDir));
+    if bad || !p.is_dir() || !p.parent().is_some_and(|d| app.fs_scope().is_allowed(d)) { return Err("No access to this folder".into()) }
+    app.fs_scope().allow_directory(&p, false).map_err(|e| e.to_string())
 }
 
 // The page asks for the waiting paths (at start, and each time it gets "open-paths"). The list is empty after this call.

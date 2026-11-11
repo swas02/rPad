@@ -1,5 +1,5 @@
 ﻿// Offline support: the app page is network-first (so updates show up), everything else is cache-first.
-const C = "notepad-v106", APP = "./index.html";
+const C = "notepad-v114", APP = "./index.html";
 self.addEventListener("install", e => { e.waitUntil(caches.open(C).then(c => c.addAll([APP, "./src/themes.js", "./editor.js", "./manifest.webmanifest", "./assets/icon.svg", "./assets/icon-maskable.svg"])).then(() => self.skipWaiting())) });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== C).map(k => caches.delete(k)))).then(() => self.clients.claim())) });
 self.addEventListener("fetch", e => {

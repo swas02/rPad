@@ -12,6 +12,7 @@
     "windows": [
       {
         "label": "main",
+        "create": false,
         "title": "rPad",
         "width": 1100,
         "height": 720,
