@@ -44,4 +44,6 @@ src-tauri/target/
 src-tauri/gen/
 
 # End-to-end suite output
-test/e2e
+test/e2e/fixtures/
+test/e2e/results/
+test/e2e/results.log
