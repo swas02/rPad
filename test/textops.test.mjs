@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { continueList, LINES, STYLES, CLEAN, markOf } from "../src/textops.js";
+import { continueList, LINES, CLEAN, markOf } from "../src/textops.js";
 
 const lineFn = text => { const L = text.split("\n"); return n => L[n - 1] };
 // Enter at the end of line n of `text`
@@ -37,14 +37,12 @@ test("indent and outdent change bullet shape", () => {
   assert.deepEqual(LINES.out(["    ▪ a"]), ["  ◦ a"]);
   assert.deepEqual(LINES.out(["x"]), ["x"]);
 });
-test("styles toggle", () => {
-  assert.equal(STYLES.s("abc"), "~~abc~~"); assert.equal(STYLES.s("~~abc~~"), "abc");
-  const b = STYLES.bo("Hi 1"); assert.notEqual(b, "Hi 1"); assert.equal(STYLES.bo(b), "Hi 1");
-  assert.equal(STYLES.sp("x2"), "x²"); assert.equal(STYLES.sp("x²"), "x2");
-});
 test("clean up", () => {
   assert.equal(CLEAN.join[1]("a\nb\n\n- c\n- d"), "a b\n\n- c\n- d");
-  assert.equal(CLEAN.trim[1]("a  b  \nc"), "a b\nc");
+  assert.equal(CLEAN.trim[1]("a  b  \nc"), "a  b\nc");
+  assert.equal(CLEAN.dedupe[1]("a\n  a\na"), "a\n  a");
+  assert.equal(CLEAN.se[1]("I think NASA is good. yes"), "I think NASA is good. Yes");
+  assert.equal(CLEAN.ti[1]("NASA reports"), "NASA Reports");
   assert.equal(CLEAN.blank[1]("a\n\nb"), "a\nb");
   assert.equal(CLEAN.sort[1]("b\na10\na2"), "a2\na10\nb");
   assert.equal(CLEAN.dedupe[1]("a\nb\na"), "a\nb");
