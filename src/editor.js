@@ -190,11 +190,11 @@ export function create({ parent, onText, onSelect, onFind }) {
 
     // a formatting-bar button; true if the key was one of ours
     format(k) {
-      if (!(T.INSERT[k] || T.LINES[k] || T.STYLES[k] || k === "u")) return false;
+      if (!(T.INSERT[k] || T.LINES[k] || k === "u")) return false;
       if (cfg.ro) return true;
       if (T.INSERT[k]) return insert(T.INSERT[k]);
       if (T.LINES[k]) { mapLines(T.LINES[k]); return true }
-      return k === "u" ? caps() : replaceRange(target(), T.STYLES[k])
+      return caps()
     },
     // a Clean up action on [from, to], or on the whole text; returns the message to show, or null if nothing changed
     cleanup(k, range) {
