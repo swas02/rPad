@@ -11,7 +11,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_os::init())
         .manage(Caption(Mutex::new(None)))
-        .invoke_handler(tauri::generate_handler![caption, pick_files, history_add])
+        .invoke_handler(tauri::generate_handler![caption, pick_files, history_add, history_remove])
         // the window gets or loses focus: paint the title bar again (the title text is grey when the window is not active)
         .on_window_event(|w, e| {
             if let tauri::WindowEvent::Focused(f) = e {
@@ -43,6 +43,16 @@ fn history_add(app: tauri::AppHandle, path: Vec<String>) -> Result<(), String> {
     let file = dir.join("history.json");
     let mut list: Vec<Vec<String>> = std::fs::read_to_string(&file).ok().and_then(|t| serde_json::from_str(&t).ok()).unwrap_or_default();
     list.push(path);
+    std::fs::write(&file, serde_json::to_string_pretty(&list).map_err(|e| e.to_string())?).map_err(|e| e.to_string())
+}
+
+// Removes entries from history.json when they leave the History panel: one path (every entry with that path), or all entries when no path is given.
+#[tauri::command]
+fn history_remove(app: tauri::AppHandle, path: Option<Vec<String>>) -> Result<(), String> {
+    let file = app.path().app_data_dir().map_err(|e| e.to_string())?.join("history.json");
+    let Ok(text) = std::fs::read_to_string(&file) else { return Ok(()) };
+    let mut list: Vec<Vec<String>> = serde_json::from_str(&text).unwrap_or_default();
+    match path { Some(p) => list.retain(|x| *x != p), None => list.clear() }
     std::fs::write(&file, serde_json::to_string_pretty(&list).map_err(|e| e.to_string())?).map_err(|e| e.to_string())
 }
 

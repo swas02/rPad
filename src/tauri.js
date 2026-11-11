@@ -15,6 +15,8 @@ export const pin = on => getCurrentWindow().setAlwaysOnTop(on).catch(() => {});
 // Open file: full paths of the picked files; their folders get access (see pick_files() in src-tauri/src/lib.rs)
 export const pickFiles = () => invoke("pick_files");
 // History file: add one closed file (its full path); see history_add() in src-tauri/src/lib.rs
+// no path: clear the whole file; a path: remove every entry with that path
+export const unlogClosed = path => invoke("history_remove", { path: path || null }).catch(() => {});
 export const logClosed = path => invoke("history_add", { path }).catch(() => {});
 export const dialog = { open, ask };
 export const path = { join };

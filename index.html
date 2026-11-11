@@ -370,7 +370,7 @@
     // AUTO_MAX: a fast typist never pauses for 1 s, so a save never waits more than AUTO_MAX ms from the first change not saved yet (since)
     const AUTO = 1000, AUTO_MAX = 2000, aWait = since => Math.max(0, Math.min(AUTO, since + AUTO_MAX - Date.now()));
     // kP: the note whose text changed since the last flush; only it pulses (a disk file pulses when its disk write is done, see dWrite; other changes, such as a tab switch, do not pulse)
-    let kT = 0, kQ = 0, kP = null; const flush = () => { clearTimeout(kT); kT = 0; kQ = 0; try { localStorage.setItem("sp-m1", JSON.stringify(S)); kP && dPulse(kP) } catch (e) { } kP = null }, keep = () => { clearTimeout(kT); kQ ||= Date.now(); kT = setTimeout(flush, aWait(kQ)) };
+    let kT = 0, kQ = 0, kP = null; const flush = () => { clearTimeout(kT); kT = 0; kQ = 0; try { const ch = pull(); S.tabs.forEach(tid); localStorage.setItem("sp-m1", JSON.stringify(S)); kSnap(); ch && setTimeout(() => show(true)); kP && dPulse(kP) } catch (e) { } kP = null }, keep = () => { clearTimeout(kT); kQ ||= Date.now(); kT = setTimeout(flush, aWait(kQ)) };
     addEventListener("pagehide", () => kT && flush()); addEventListener("visibilitychange", () => kT && flush()); addEventListener("blur", () => kT && flush()); // save at once when the window loses focus
     const cur = () => S.tabs[S.cur];
     // hash routes: #/note/<id>  #/tabs  #/folders  #/folders/<n>  #/starred
@@ -381,6 +381,28 @@
     if (vv) { vv.addEventListener("resize", kb); addEventListener("orientationchange", () => { vh = 0; setTimeout(kb, 300) }) }
     ed.dom.addEventListener("focus", () => setTimeout(kb, 300)); ed.dom.addEventListener("blur", kb);
     const tid = x => x.id || (x.id = Math.random().toString(36).slice(2, 8));
+    // Two windows share the page storage (sp-m1). Before a window writes, and when the storage changes or the window gets focus, it merges what the other window saved. Notes only: a disk file has its own check (dSync).
+    // A note the other window added is added here. A note the other window changed is taken when it is not changed here. A note the other window closed is closed here when it is not changed here.
+    // When both windows changed the same note, this window keeps its text. kB: the text of each note at the last sync. kK: the notes in the storage at the last sync. kC: History at the last sync.
+    let kB = new Map(), kK = new Set(), kC = "";
+    const kSnap = () => { S.tabs.forEach(tid); kB = new Map(S.tabs.filter(x => !x.fp).map(x => [x.id, x.t])); kK = new Set(kB.keys()); kC = JSON.stringify(S.closed || []) };
+    const pull = render => {
+      let r; try { r = JSON.parse(localStorage.getItem("sp-m1")) } catch (e) { return false }
+      if (!r || !r.tabs) return false;
+      S.tabs.forEach(tid); const c = cur(), ids = new Set(); let ch = false;
+      for (const y of r.tabs) {
+        if (!y.id || y.fp || !F[y.f]) continue; ids.add(y.id); kK.add(y.id);
+        const x = S.tabs.find(z => z.id === y.id);
+        if (!x) { if (!kB.has(y.id)) { S.tabs.push(y); kB.set(y.id, y.t); ch = true } continue }
+        if (x.t === kB.get(x.id) && ["t", "n", "x", "s"].some(k => (x[k] || "") !== (y[k] || ""))) { for (const k of ["t", "n", "x", "s", "m"]) x[k] = y[k]; kB.set(x.id, y.t); ch = true }
+      }
+      const n = S.tabs.length; S.tabs = S.tabs.filter(x => x.fp || !kK.has(x.id) || ids.has(x.id) || x.t !== kB.get(x.id)); if (S.tabs.length !== n) ch = true;
+      if (!S.tabs.length) S.tabs.push({ t: "", f: 0 });
+      const rc = JSON.stringify(r.closed || []); if (rc !== JSON.stringify(S.closed || []) && JSON.stringify(S.closed || []) === kC) { S.closed = (r.closed || []).filter(x => F[x.f]); kC = JSON.stringify(S.closed); ch = true }
+      const j = S.tabs.indexOf(c); S.cur = j >= 0 ? j : Math.min(S.cur, S.tabs.length - 1);
+      if (ch && render) show(true); return ch
+    };
+    kSnap(); addEventListener("focus", () => pull(true)); addEventListener("storage", e => e.key === "sp-m1" && pull(true));
     // an open sheet owns one history entry, so the back button closes it. While closing it (skip set),
     // URL changes are held and applied once history.back() has landed.
     let shH = 0, skip = null;
@@ -401,7 +423,7 @@
     const T = t => t.n || tName(t);
     // extension: t.x ("txt" if unset, "" for none). Every file is plain text whatever its extension; D() is the name shown to the user
     const ex = t => t.x ?? "txt", dx = t => ex(t) ? "." + ex(t) : "", D = t => T(t) + dx(t), full = t => t.n ? t.n + dx(t) : "",
-      setN = (t, v) => { v = v.trim(); if (!v) { t.n = undefined; return } const m = v.match(/^(.+).([a-z0-9_+-]{1,10})$/i); if (m && /[a-z]/i.test(m[2])) { t.n = m[1]; t.x = m[2].toLowerCase() } else t.n = v };
+      setN = (t, v) => { v = v.trim(); if (!v) { t.n = undefined; return } const m = splitN(v); if (m[1]) { t.n = m[0]; t.x = m[1] } else t.n = v };
     // a file with no name and no text is named after when it was made ("2025-11-02 14-05-09"), or "Untitled" if that setting is off; duplicates get " (2)"
     const cAt = x => x.c || (x.c = x.m || Date.now()),
       dShort = ms => { const d = new Date(ms), p = n => String(n).padStart(2, "0"); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}-${p(d.getMinutes())}-${p(d.getSeconds())}` };
@@ -580,7 +602,7 @@ ${DV}${HD("Editor")}
 ${[["wrap", "Word wrap", S.wrap !== false], ["ln", "Line numbers", !!S.ln], ["spell", "Spell check", S.spell !== false]].map(tg).join("")}
 <div class="min-[600px]:hidden">${DV}${HD("Header")}${tg(["logo", `App icon<small class="${SM}">Show the logo at the left of the top row (phone only)</small>`, !!S.logo])}</div>
 ${DV}${HD("Files")}
-${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new files are called Untitled</small>`, S.ts !== false])}${tg(["ce", `Remove empty files<small class="${SM}">Unnamed files with no text are removed when closed and at start</small>`, S.ce !== false])}${DESK ? tg(["nt", `Show non-text files<small class="${SM}">Also list PDFs, images and other files in folders you open. You cannot edit them.</small>`, !!S.nt]) : ""}${tg(["ca", `Close all tabs when rPad closes<small class="${SM}">When rPad starts, no tabs are open. Notes with text go to History.</small>`, !!S.ca])}${tg(["sn", `Start with a new note<small class="${SM}">When rPad starts, open an empty note in Scratchpad. Your other tabs stay open.</small>`, !!S.sn])}<div class="h-2"></div>`
+${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new files are called Untitled</small>`, S.ts !== false])}${tg(["ce", `Remove empty files<small class="${SM}">Unnamed files with no text are removed when closed and at start</small>`, S.ce !== false])}${DESK ? tg(["nt", `Show non-text files<small class="${SM}">Also list PDFs, images and other files in folders you open. You cannot edit them.</small>`, !!S.nt]) : ""}${tg(["ca", `Close all tabs at start<small class="${SM}">When rPad starts, no tabs are open. Notes with text go to History.</small>`, !!S.ca])}${tg(["sn", `Start with a new note<small class="${SM}">When rPad starts, open an empty note in Scratchpad. Your other tabs stay open.</small>`, !!S.sn])}<div class="h-2"></div>`
     }
     function setS() { sheet(`<h3 class="${H3}">Display settings</h3>${stgH()}`) }
     // Clean up: acts on the selection (line tools widen it to whole lines) or on the whole tab
@@ -588,7 +610,7 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
     function cuS() {
       const s = ed.sel(); CU = s.from < s.to ? [s.from, s.to] : null; ed.blur();
       sheet(`<h3 class="${H3} pb-0">Clean up</h3><div class="${CAP} pt-0">${CU ? "Selected text" : "Whole tab"}</div>` +
-        [["join", "Join broken lines", "Lines inside a paragraph become one. List items stay."], ["plain", "Make plain", "Fancy letters, smart quotes, dashes, hidden and non-breaking spaces"], ["trim", "Trim spaces", "Spaces at line ends and repeated spaces"], ["blank", "Remove blank lines"], ["sort", "Sort lines A to Z"], ["dedupe", "Remove duplicate lines"]]
+        [["join", "Join broken lines", "Lines inside a paragraph become one. List items stay."], ["plain", "Make plain", "Fancy letters, smart quotes, dashes, hidden and non-breaking spaces"], ["trim", "Trim spaces", "Spaces at the end of lines"], ["blank", "Remove blank lines"], ["sort", "Sort lines A to Z"], ["dedupe", "Remove duplicate lines"]]
           .map(x => `<button class="${RW}" data-a="cu" data-v="${x[0]}"><span class="flex-1">${x[1]}${x[2] ? `<small class="${SM}">${x[2]}</small>` : ""}</span></button>`).join("") +
         `<div class="${CAP}">Change case</div><div class="px-3 pb-1.5"><div class="${SEG}">${[["lo", "lower"], ["up", "UPPER"], ["ti", "Title"], ["se", "Sentence"]].map(x => `<button class="${segB(false)}" data-a="cu" data-v="${x[0]}">${x[1]}</button>`).join("")}</div></div>`)
     }
@@ -618,11 +640,11 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
       list_dir: async ({ dir }) => {
         const es = (await TAU.fs.readDir(dir)).filter(e => e.isFile && !e.name.startsWith("."));
         const v = await Promise.all(es.map(async e => {
-          const p = await dP(dir, e.name), st = await TAU.fs.stat(p), mtime = st.mtime?.getTime() ?? 0, key = p + "|" + mtime + "|" + st.size;
-          let text = dTC.get(key); if (text === undefined) { text = st.size <= MAXB && await dSniff(p).catch(() => false); dTC.set(key, text) }
-          return { name: e.name, mtime, size: st.size, text };
+          const p = await dP(dir, e.name), st = await TAU.fs.stat(p), mtime = st.mtime?.getTime() ?? 0, sig = mtime + "|" + st.size; // one entry per file: a changed file replaces its old entry
+          let c = dTC.get(p); if (!c || c.sig !== sig) { c = { sig, text: st.size <= MAXB && await dSniff(p).catch(() => false) }; dTC.set(p, c) }
+          return { name: e.name, mtime, size: st.size, text: c.text };
         }));
-        return v.sort((a, b) => a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1);
+        return v.sort((a, b) => { const x = a.name.toLowerCase(), y = b.name.toLowerCase(); return x < y ? -1 : x > y ? 1 : 0 });
       },
       read_text: async ({ dir, name }) => {
         const p = await dP(dir, name); if ((await TAU.fs.stat(p)).size > MAXB) throw "big";
@@ -656,7 +678,9 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
       return inv("list_dir", { dir: f.p }).then(v => { DL[f.p] = v; DE[f.p] = "" }, e => { DL[f.p] = []; DE[f.p] = String(e) }).then(() => { const n = $("#nl"); if (n && DK.matches) n.innerHTML = nlA(); if (OG === k && app.classList.contains("insw")) ovL() })
     }
     // the dot before the tab name pulses once, when a save is done (class sv, see the CSS)
-    const dB = new Set(); // tabs that are being written now
+    const dB = new Map(); // tabs that are being written now -> the write (a promise)
+    const dIdle = async t => { while (dB.has(t)) await dB.get(t) }; // wait until no write of this tab is running
+    const dDrop = t => { clearTimeout(dW.get(t)); dW.delete(t); dQ.delete(t) }; // cancel the save that waits for this tab
     let dPT = 0; // at most one blink per second, even when many saves finish in that second
     const dPulse = t => Date.now() - dPT < 1000 ? 0 : (dPT = Date.now(), $("#tabs").children[S.tabs.indexOf(t)]?.firstElementChild?.classList.add("sv"));
     $("#tabs").addEventListener("animationend", e => e.target.classList.remove("sv")); // one soft blink per save; typing on keeps it going
@@ -669,16 +693,19 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
       dW.set(t, setTimeout(() => t.fp ? dWrite(t) : nw() ? dW.delete(t) : dCreate(t), aWait(dQ.get(t))))
     }
     function dWrite(t, force) {
-      if (!force && dB.has(t)) { clearTimeout(dW.get(t)); dW.delete(t); return Promise.resolve() } // a write of this file is still running: the finally below saves the newer text after it
+      if (!force && dB.has(t)) { clearTimeout(dW.get(t)); dW.delete(t); return Promise.resolve(true) } // a write of this file is still running: the finally below saves the newer text after it
       clearTimeout(dW.get(t)); dW.delete(t); dQ.delete(t); const f = F[t.f];
-      if (!t.fp || !f || !f.d || (t.b === "ro" || t.b === "lock" || (!force && (t.b === "changed" || t.b === "min")))) return Promise.resolve();
+      // "gone": the file was deleted by another app (or by Delete). Only Save (force) makes it again.
+      if (!t.fp || !f || !f.d || (t.b === "ro" || t.b === "lock" || (!force && (t.b === "changed" || t.b === "min" || t.b === "gone")))) return Promise.resolve(true);
       // a failed save means rPad lost write access: lock the tab and offer a copy (the "lock" banner); the text stays in rPad
       // ds = the text that was written, not the text now: a change typed during the write stays unsaved, and its own timer saves it
-      const s = t.t; dB.add(t);
-      return inv("write_text", { dir: f.p, name: t.fp, text: dOut(t), createOnly: false, expect: force ? 0 : t.mt }).then(m => { t.mt = m; t.ds = s; if (t.b === "gone") t.b = null; dPulse(t) }, e => {
+      // The promise gives true when the text is on the disk, false when the save failed
+      const s = t.t, p = inv("write_text", { dir: f.p, name: t.fp, text: dOut(t), createOnly: false, expect: force ? 0 : t.mt }).then(m => { t.mt = m; t.ds = s; if (t.b === "gone") t.b = null; dPulse(t); return true }, e => {
         t.b = e === "changed" ? "changed" : "lock"; // "changed": another app edited the file; the banner asks which version to keep
-        if (t === cur()) show(); else toast(e === "changed" ? t.fp + " was changed by another app" : "Cannot save " + t.fp)
-      }).finally(() => { dB.delete(t); if (t.t !== t.ds && !dW.has(t)) dSave(t) })
+        if (t === cur()) show(); else toast(e === "changed" ? t.fp + " was changed by another app" : "Cannot save " + t.fp);
+        return false
+      }).finally(() => { dB.delete(t); if (t.t !== t.ds && !dW.has(t)) dSave(t) });
+      dB.set(t, p); return p
     }
     const dOut = t => t.le === "\r\n" ? t.t.replace(/\n/g, "\r\n") : t.t;
     // a new note in a disk folder becomes a file once it has text; its name is the one it already shows (or the date), made unique
@@ -691,7 +718,8 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
           const nm = fileOf({ ...t, n: base + (k > 1 ? ` (${k})` : "") }), s = t.t;
           try { t.mt = await inv("write_text", { dir: f.p, name: nm, text: dOut(t), createOnly: true }); t.fp = nm; t.ds = s; [t.n, t.x] = splitN(nm); break } catch (e) { if (e !== "exists") throw e }
         }
-        show(); dScan(t.f); dPulse(t); return !!t.fp
+        if (!t.fp) { if (!q) toast("Cannot create the file. The folder has too many files with this name."); return false }
+        show(); dScan(t.f); dPulse(t); return true
       } catch (e) { if (!q) toast("Cannot create the file"); return false }
       // The text changed while the file was being made (typed more, or cleared): the file now exists, so save the new text (also empty) the normal way
       finally { dC.delete(t); if (t.fp && t.t !== t.ds) dSave(t) }
@@ -717,7 +745,7 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
     // Move to folder, with the official fs and dialog plugins.
     //   disk -> disk:   fs.rename (Windows can't rename across drives, so there: fs.copyFile, then fs.remove)
     //   rPad -> disk:   the file is made now in the new folder
-    //   disk -> rPad:   the text comes into rPad, then the file is deleted (asks first)
+    //   disk -> rPad:   the text comes into rPad, then the file is deleted (no question: the user selected the folder)
     // A name already taken in the new folder: "Keep the two files" (the moved file gets " (2)"). No Replace: that could overwrite a file open in another tab.
     // The new folder is gone: offer to create it again. Can't move (file in use, no permission): offer a copy; the original stays.
     const dCode = e => +(String(e).match(/os error (\d+)/)?.[1] || 0);
@@ -735,9 +763,9 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
       if (dMv.has(t)) return; dMv.add(t);
       try {
         if (dC.has(t)) return toast("rPad is saving the file. Wait, then do this again.");
-        if (t.fp) await dWrite(t); // save pending typing to the old place first
+        if (t.fp) { await dIdle(t); if (!await dWrite(t)) return toast("Cannot save the file, so rPad cannot move it") } // save pending typing to the old place first (after a write that is running)
         else { clearTimeout(dW.get(t)); dW.delete(t); if (!b.d || !t.t.trim()) { t.f = k; afterTabs(); return toast(`The note is now in ${b.n}`) } } // no file yet: nothing on disk to move
-        if (!b.d) { // disk -> rPad: the user selected the folder, so no question. The text stays in the tab; the disk file is removed.
+        if (!b.d) { // disk -> rPad: the user selected the folder, so there is no question. The text stays in the tab; the disk file is removed.
           const fp = t.fp, fk = t.f; t.f = k; t.fp = null; t.b = null; t.mt = 0; afterTabs();
           try { await TAU.fs.remove(await dP(a.p, fp)); toast(`The note is now in ${b.n}`) } catch (e) { if (dCode(e) === 2) toast(`The note is now in ${b.n}`); else toast(`rPad copied the file to ${b.n}, but cannot delete ${fp}. ${dWhy(e)}`) }
           return dScan(fk)
@@ -775,10 +803,11 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
       finally { dMv.delete(t); if (!t.fp || t.t !== t.ds) dSave(t) }
     }
     const dErr = e => toast(e === "binary" ? "This is not a text file" : e === "big" ? "The file is too large. The maximum size is 5 MB." : "Cannot open the file");
-    function dOpen(k, name) {
-      const i = S.tabs.findIndex(x => x.f === k && x.fp === name); if (i >= 0) { setH("#note-" + tid(S.tabs[i])); return render() }
+    // done: runs once the file is open (History uses it to drop its entry only when the file opened)
+    function dOpen(k, name, done) {
+      const i = S.tabs.findIndex(x => x.f === k && x.fp === name); if (i >= 0) { done?.(); setH("#note-" + tid(S.tabs[i])); return render() }
       const t = { t: "", f: k, fp: name }; [t.n, t.x] = splitN(name);
-      dRead(t).then(() => { S.tabs.push(t); toRecent(t); setH("#note-" + tid(t)); render() }, dErr)
+      dRead(t).then(() => { done?.(); S.tabs.push(t); toRecent(t); setH("#note-" + tid(t)); render() }, dErr)
     }
     // the window got focus: pick up files added, removed or edited by other apps
     let dBusy = 0;
@@ -850,10 +879,14 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
     }
     function add(f) { S.tabs.push({ t: "", f: f == null ? cur().f : f }); S.cur = S.tabs.length - 1; close(); swv(false); show(true); ed.focus() }
     // renaming a note from a disk folder renames its file
-    function rnT(t, v) {
-      const f = F[t.f]; if (!t.fp || !f || !f.d) return setN(t, v);
-      const o = [t.n, t.x]; setN(t, v); if (!t.n) { [t.n, t.x] = o; return } const nm = fileOf(t); if (nm === t.fp) return;
-      dWrite(t).then(() => inv("rename_file", { dir: f.p, from: t.fp, to: nm })).then(m => { t.fp = nm; t.mt = m; dScan(t.f); show() }, e => { [t.n, t.x] = o; show(); toast(e === "exists" ? "A file with this name is already in the folder" : "Cannot rename the file") })
+    // The toast says what happened (also for a file: the rename is done when the toast shows)
+    async function rnT(t, v) {
+      const f = F[t.f]; if (!t.fp || !f || !f.d) { setN(t, v); return toast(t.n ? "The name is changed" : `The name is now ${T(t)}`) }
+      const o = [t.n, t.x]; setN(t, v); if (!t.n) { [t.n, t.x] = o; return toast("A file must have a name") } const nm = fileOf(t); if (nm === t.fp) return toast("The name is changed");
+      try {
+        await dIdle(t); if (!await dWrite(t)) throw "save";
+        const m = await inv("rename_file", { dir: f.p, from: t.fp, to: nm }); t.fp = nm; t.mt = m; dScan(t.f); show(); toast("The name is changed")
+      } catch (e) { [t.n, t.x] = o; show(); toast(e === "exists" ? "A file with this name is already in the folder" : e === "save" ? "Cannot save the file, so rPad cannot rename it" : "Cannot rename the file") }
     }
     const afterTabs = () => app.classList.contains("insw") ? (show(true), ovS()) : show(true);
     // History is built when a file is opened (like "Open Recent" in VS Code), not when it is closed. A note typed in rPad has no file, so it goes to History when it is closed.
@@ -861,7 +894,10 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
     // A file from a disk folder has its real path. A note typed in rPad has no file, so its path starts with "rPad".
     // History panel: a note keeps its text; a disk file keeps only its place (folder + file name) and is read from the disk again on reopen
     const fullP = x => { const f = F[x.f]; return x.fp && f.p ? f.p + "\\" + x.fp : "rPad\\" + f.n + "\\" + fileOf(x) };
-    const logP = x => { if (DESK) TAU.logClosed(fullP(x).split(/[\\/]+/).filter(Boolean)) };
+    const pathP = x => fullP(x).split(/[\\/]+/).filter(Boolean);
+    const logP = x => { if (DESK) TAU.logClosed(pathP(x)) };
+    // history.json is the source of truth: an entry that leaves History (removed, cleared, or reopened) leaves the file too
+    const unlogP = x => { if (DESK) TAU.unlogClosed(pathP(x)) };
     const toRecent = x => { const r = { f: x.f, fp: x.fp, n: x.n, x: x.x, t: "", d: "Just now" }; S.closed = S.closed.filter(y => !(y.f === r.f && y.fp === r.fp)); S.closed.unshift(r); logP(x) };
     const toClosed = x => { if (x.fp || !keepX(x)) return; const { m: _m, ...y } = x; S.closed.unshift({ ...y, d: "Just now" }); logP(x) };
     // Close: the tab fades and shrinks a little, and the page fades with it (standard time), then the tab is removed. Class tcl / pcl: see the CSS.
@@ -871,7 +907,8 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
       const b = $("#tabs").children[i];
       if (!b || matchMedia("(prefers-reduced-motion: reduce)").matches) return closeNow(i);
       closing = 1; b.classList.add("tcl"); if (i === S.cur) $("#ed").classList.add("pcl");
-      setTimeout(() => { closing = 0; $("#ed").classList.remove("pcl"); closeNow(i) }, DUR)
+      const x = S.tabs[i]; // the tab itself, not its place: tabs can move during the fade
+      setTimeout(() => { closing = 0; $("#ed").classList.remove("pcl"); const j = S.tabs.indexOf(x); if (j >= 0) closeNow(j); else show(true) }, DUR)
     }
     function closeNow(i) {
       // the file stays in its folder (as a closed tab); an empty file you never named is discarded
@@ -885,8 +922,9 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
       const x = S.tabs.splice(i, 1)[0], c = S.cur, nm = fileOf(x);
       if (!S.tabs.length) S.tabs.push({ t: "", f: 0 }); if (i <= S.cur && S.cur > 0) S.cur--;
       if (x.fp) {
-        const f = F[x.f];
-        close(); afterTabs(); return inv("delete_file", { dir: f.p, name: x.fp }).then(() => { toast(`${nm} is deleted`); dScan(x.f) }, () => { S.tabs.splice(i, 0, x); S.cur = c; afterTabs(); toast("Cannot delete the file") })
+        // no save may make the file again: stop the waiting save, mark the tab "gone" (dWrite skips it), wait for a write that is running
+        const f = F[x.f], b0 = x.b; dDrop(x); x.b = "gone";
+        close(); afterTabs(); return dIdle(x).then(() => inv("delete_file", { dir: f.p, name: x.fp })).then(() => { toast(`${nm} is deleted`); dScan(x.f) }, () => { x.b = b0; S.tabs.splice(i, 0, x); S.cur = c; afterTabs(); toast("Cannot delete the file"); if (x.t !== x.ds) dSave(x) })
       }
       close(); afterTabs(); toast(`${nm} is deleted`, () => { S.tabs.splice(i, 0, x); S.cur = c; afterTabs() })
     }
@@ -932,8 +970,8 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
       const b = e.target.closest("[data-a]"); if (!b) { if (e.target.id === "sh") close(); return }
       const a = b.dataset.a, i = +b.dataset.i, v = b.dataset.v, t = cur();
       const A = {
-        tab: () => { S.cur = i; show(true); dChk(cur()) }, new: () => newNote(i), nta: ntAsk, hist: histS, hclr: () => { if (b.dataset.ok !== "1") { b.dataset.ok = "1"; b.textContent = "Tap again to clear all"; return } S.closed = []; shOpen() ? (keep(), histS()) : show() }, hdel: () => { S.closed.splice(i, 1); shOpen() ? (keep(), histS()) : show() }, hopen: () => { const { d: _, ...d } = S.closed.splice(i, 1)[0]; if (d.fp) { close(); return dOpen(d.f, d.fp) } S.tabs.push(d); close(); setH("#note-" + tid(d)); render() }, grid: () => go("#tabs"), ws: () => wsS(b), menu: () => { if (!DK.matches) return menuS(); const r = b.getBoundingClientRect(); setTimeout(() => cxOpen(S.cur, r.right - 190, r.bottom + 2)) }, tcu: () => { S.cur = i; show(true); cuS() }, ecopy: () => navigator.clipboard.writeText(ed.selText()).then(() => toast("The text is copied"), () => toast("Cannot copy the text")),
-        ecut: () => { const x = ed.selText(); navigator.clipboard.writeText(x).then(() => ed.replaceSel(""), () => toast("Cannot cut the text")) },
+        tab: () => { S.cur = i; show(true); dChk(cur()) }, new: () => newNote(i), nta: ntAsk, hist: histS, hclr: () => { if (b.dataset.ok !== "1") { b.dataset.ok = "1"; b.textContent = "Tap again to clear all"; return } if (DESK) TAU.unlogClosed(); S.closed = []; shOpen() ? (keep(), histS()) : show() }, hdel: () => { if (S.closed[i]) unlogP(S.closed[i]); S.closed.splice(i, 1); shOpen() ? (keep(), histS()) : show() }, hopen: () => { const x = S.closed[i]; if (!x) return; if (x.fp) { close(); return dOpen(x.f, x.fp, () => { unlogP(x); S.closed.splice(S.closed.indexOf(x), 1) }) } unlogP(x); const { d: _, ...d } = S.closed.splice(i, 1)[0]; S.tabs.push(d); close(); setH("#note-" + tid(d)); render() }, grid: () => go("#tabs"), ws: () => wsS(b), menu: () => { if (!DK.matches) return menuS(); const r = b.getBoundingClientRect(); setTimeout(() => cxOpen(S.cur, r.right - 190, r.bottom + 2)) }, tcu: () => { S.cur = i; show(true); cuS() }, ecopy: () => navigator.clipboard.writeText(ed.selText()).then(() => toast("The text is copied"), () => toast("Cannot copy the text")),
+        ecut: () => { const x = ed.selText(); if (!x) return; navigator.clipboard.writeText(x).then(() => ed.replaceSel(""), () => toast("Cannot cut the text")) },
         epaste: () => navigator.clipboard.readText().then(x => x && ed.replaceSel(x), () => toast("Cannot read the clipboard")), set: () => { if (DK.matches) { S.sbh = 0; S.sp = "g"; app.classList.remove("sbh"); show() } else setS() }, find: fnd, fp: () => step(-1), fn: () => step(1),
         rpt: () => { const r = $("#rp"); r.style.display = r.style.display === "flex" ? "none" : "flex"; if (r.style.display === "flex") $("#ri").focus() },
         rp1: () => { ed.find.set({ replace: $("#ri").value }); ed.find.replace() },
@@ -944,7 +982,7 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
         star: () => { t.s = !t.s; show(); toast(t.s ? "Star added" : "Star removed") },
         om: () => go("#" + { t: "tabs", g: "folders", s: "starred" }[v]), og: () => go(i >= 0 ? "#folders-" + i : "#tabs"),
         swx: () => { setH("#note-" + tid(cur())); render() },
-        trn: () => { rnT(S.tabs[i], $("#rn").value); close(); afterTabs(); toast("The name is changed") },
+        trn: () => { rnT(S.tabs[i], $("#rn").value); close(); afterTabs() },
         tstar: () => { const x = S.tabs[i]; x.s = !x.s; close(); afterTabs(); toast(x.s ? "Star added" : "Star removed") },
         tmv: () => tmvS(i), tf: () => { close(); if (!F[+v].ok) return toast(`${F[+v].n} is not connected`); dMove(S.tabs[i], +v) },
         tdup: () => { const x = S.tabs[i]; S.tabs.splice(i + 1, 0, { t: x.t, f: x.f, n: x.n && x.n + " copy", x: x.x }); if (S.cur > i) S.cur++; dSave(S.tabs[i + 1]); close(); afterTabs(); toast("rPad made a copy of the note") },
@@ -954,10 +992,11 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
         tcl: () => closeT(i), cus: cuS, cu: () => cuGo(v),
         share: () => { close(); if (!navigator.share) return (navigator.clipboard ? navigator.clipboard.writeText(t.t) : Promise.reject()).then(() => toast("Sharing is not available here. rPad copied the text to the clipboard."), () => toast("Cannot share or copy the text")); navigator.share({ title: T(t), text: t.t }).catch(() => { }) },
         dl: () => { close(); MBA.dl() },
-        pnew: () => { close(); (navigator.clipboard && navigator.clipboard.readText ? navigator.clipboard.readText() : Promise.reject()).then(s => { if (!s) return toast("The clipboard is empty"); add(); cur().t = s; show(true) }, () => toast("Cannot read the clipboard. Touch and hold in the note, then select Paste.")) }, tco: () => closeMany(i), tca: () => closeMany(-1),
+        pnew: () => { close(); (navigator.clipboard && navigator.clipboard.readText ? navigator.clipboard.readText() : Promise.reject()).then(s => { if (!s) return toast("The clipboard is empty"); add(); cur().t = s; dSave(cur()); keep(); show(true) }, () => toast("Cannot read the clipboard. Touch and hold in the note, then select Paste.")) }, tco: () => closeMany(i), tca: () => closeMany(-1),
         pc: () => { SC = v; document.querySelectorAll(".swc").forEach(s => s.innerHTML = s.dataset.v === SC ? ic("chk", "size-[17px] stroke-[3]") : "") },
         fsave: () => {
           const n = $("#fn")?.value.trim() || "Untitled folder";
+          if ((i < 0 || !F[i].d) && F.some((g, k) => k !== i && !g.h && g.n.toLowerCase() === n.toLowerCase())) return toast("A folder with this name is already in rPad");
           if (i >= 0) { if (!F[i].d) F[i].n = n; F[i].c = SC }
           else { F.push({ n, p: "Documents/" + n, ok: 1, c: SC }); if (v === "mv") t.f = F.length - 1 }
           close(); render(); toast(i >= 0 ? "The folder is updated" : "The folder is created")
@@ -970,6 +1009,11 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
             S.tabs = S.tabs.filter(x => !(x.f === i && x.fp)); S.closed = S.closed.filter(x => !(x.f === i && x.fp)); if (!S.tabs.length) S.tabs.push({ t: "", f: to }); S.cur = Math.max(0, S.tabs.indexOf(c)); SF = -1;
             // forget the folder completely: its path, file list, scan error and text-check cache (only notes typed in rPad are kept, moved to another folder)
             delete DL[fp]; delete DE[fp]; for (const k of dTC.keys()) if (k.startsWith(fp)) dTC.delete(k) } [...S.tabs, ...S.closed].forEach(x => { if (x.f === i) x.f = to; if (x.f > i) x.f-- }); F.splice(i, 1);
+          // every other place that keeps a folder number: open folders (SX), folder filters (S.fc), the selected folder (SF), the folder in the overview (OG)
+          const sh = k => k > i ? k - 1 : k;
+          { const o = [...SX]; SX.clear(); o.filter(k => k !== i).forEach(k => SX.add(sh(k))) }
+          if (S.fc) S.fc = S.fc.filter(k => k !== i).map(sh);
+          SF = SF === i ? -1 : SF < 0 ? SF : sh(SF); OG = OG === i ? -1 : OG < 0 ? OG : sh(OG);
           close(); if (/^#folders-/.test(location.hash)) setH("#folders"); render(); flush(); toast(dk ? `${n} is removed from rPad. The files stay on the disk.` : `The folder ${n} is deleted`)
         },
         ovx: () => closeT(i),
@@ -980,7 +1024,7 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
         ap: () => { if (app.classList.contains("insw")) { swv(false); S.sbh = 1 } if (!S.sbh && (S.sp || "e") === v) S.sbh = 1; else { S.sbh = 0; S.sp = v } app.classList.toggle("sbh", !!S.sbh); show(); if (!S.sbh && v === "s") $("#sq").focus() },
         sf: () => { SF = i; SSM = 0; SX.has(i) ? SX.delete(i) : SX.add(i); show(); if (SX.has(i) && i >= 0) dScan(i) }, sfm: () => { SFO = !SFO; SSM = 0; show() }, ssm: () => { SSM = !SSM; SFO = 0; show() }, ss: () => { S.so = v; SSM = 0; keep(); show() }, fx: () => { const c = S.fc || (S.fc = []), k = c.indexOf(i); k < 0 ? c.push(i) : c.splice(k, 1); show() },
         so: () => sOpen(i, +v), mb: () => MBA[v](i), mo: () => mbOpen(v), hb: () => { HB = v || (HB ? "" : "/"); hbR() },
-        ren: () => { const n = $("#rn").value.trim(); rnT(t, n); close(); show(); toast(n || t.fp ? "The name is changed" : "The name is now the first line of the note") },
+        ren: () => { rnT(t, $("#rn").value); close(); show() },
         del: () => { if (b.dataset.ok !== "1") { b.dataset.ok = "1"; b.textContent = "Tap again to delete. The note does not go to History."; return } delT(isNaN(i) ? S.cur : i) },
         bn: () => { const r = BN[v](); if (r !== 1) t.b = null; show(true) }
       };
@@ -1103,7 +1147,7 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
         o = h("Settings") + L(`<div class="stg">${stgH()}</div>`)
       } else if (p === "b") {
         const xs = S.tabs.map((x, i) => [x, i]).filter(r => r[0].s);
-        o = h("Starred") + L(xs.length ? xs.map(([x, i]) => fRow(x, i)).join("") : `<div class="px-2 py-1 text-slate-500 dark:text-slate-400">No starred tabs yet. Use the star in the menu to star a tab.</div>`)
+        o = h("Starred") + L((xs.length ? xs.map(([x, i]) => fRow(x, i)).join("") : `<div class="px-2 py-1 text-slate-500 dark:text-slate-400">No starred tabs yet. Use the star in the menu to star a tab.</div>`) + `<div class="px-2 py-2 text-[12px] text-slate-500 dark:text-slate-400">This list shows open tabs only.</div>`)
       } else {
         o = `<div class="flex shrink-0 items-center gap-0.5 px-2 pb-2 pt-3"><div class="flex h-8 min-w-0 flex-1 items-center gap-2 px-2 text-[13px]"><span class="min-w-0 flex-1 truncate font-medium">Closed files</span></div>${S.closed.length ? `<button data-a="hclr" class="h-8 shrink-0 rounded-md px-2 text-[13px] text-red-600 hover:bg-slate-500/10 dark:text-red-400">Clear all</button>` : ""}</div>` +
           L(`<div id="hl" class="pl-4">` + (S.closed.length ? S.closed.map((x, i) => !x.t.trim() && !x.fp ? "" : `<div class="group/r relative rounded-md hover:bg-slate-500/5"><button data-a="hopen" data-i="${i}" title="${esc(fullP(x))}. Click to reopen." class="flex h-8 w-full min-w-0 items-center gap-2.5 px-3 pr-8 text-left"><span class="ni ${tx(F[x.f])}">${ic("doc", "size-4 stroke-2")}</span><span class="truncate">${esc(D(x))}</span></button><button data-a="hdel" data-i="${i}" aria-label="Remove from History" title="Remove from History" class="${SBB} absolute right-1.5 top-1 hidden group-hover/r:grid">${ic("x", "size-3.5 stroke-2")}</button></div>`).join("") : `<div class="px-3 py-2 text-slate-500 dark:text-slate-400">No closed tabs yet.</div>`) + `</div>`)
@@ -1119,7 +1163,7 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
     function srR() {
       const q = SQ.toLowerCase(); let n = 0;
       const o = !q ? "" : S.tabs.map((x, i) => {
-        const lo = x.t.toLowerCase(), P = []; let p = -1; while ((p = lo.indexOf(q, p + 1)) >= 0) P.push(p); if (!P.length) return ""; n += P.length;
+        const lo = x.t.toLowerCase(), P = []; let p = -1; while ((p = lo.indexOf(q, p < 0 ? 0 : p + q.length)) >= 0) P.push(p); // matches do not overlap, like Find if (!P.length) return ""; n += P.length;
         return `<div class="mt-1 flex items-center gap-2 px-2 py-0.5 font-medium"><span class="size-2 shrink-0 rounded-full ${dot(F[x.f])}"></span><span class="truncate">${esc(D(x))}</span><span class="ml-auto rounded-full bg-slate-200 px-1.5 text-[11px] dark:bg-slate-800">${P.length}</span></div>` +
           P.slice(0, 5).map(p => { const ls = x.t.lastIndexOf("\n", p - 1) + 1, a = Math.max(ls, p - 20); return `<button data-a="so" data-i="${i}" data-v="${p}" class="${SBI} !flex-none w-full pl-6"><span class="truncate text-slate-600 dark:text-slate-300">${esc(x.t.slice(a, p))}<mark class="rounded-sm bg-yellow-200 text-inherit dark:bg-yellow-700/60">${esc(x.t.slice(p, p + q.length))}</mark>${esc(x.t.slice(p + q.length, p + q.length + 60).split("\n")[0])}</span></button>` }).join("")
       }).join("");
@@ -1152,7 +1196,8 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
         if (t.b === "changed" || t.b === "min") return toast("Another app changed this file. First, select the version to keep.");
         (t.fp ? dWrite(t) : dCreate(t)).then(() => { if (t.fp && t.t === t.ds) toast(`rPad saved ${t.fp}. Auto-save is on. You do not need to press Ctrl+S.`) })
       },
-      dla: () => { const xs = S.tabs.filter(x => x.t.trim()); xs.forEach((x, k) => setTimeout(() => dlF(fileOf(x), x.t), k * 250)); toast(xs.length ? `rPad is downloading ${xs.length} file${xs.length === 1 ? "" : "s"}` : "No tab has text") },
+      // two tabs with the same name get " (2)", " (3)" so no download replaces another
+      dla: () => { const xs = S.tabs.filter(x => x.t.trim()), used = new Map(); xs.forEach((x, k) => { let nm = fileOf(x); const u = nm.toLowerCase(), c = (used.get(u) || 0) + 1; used.set(u, c); if (c > 1) { const e = dx(x); nm = (e && nm.endsWith(e) ? nm.slice(0, -e.length) : nm) + ` (${c})` + e } setTimeout(() => dlF(nm, x.t), k * 250) }); toast(xs.length ? `rPad is downloading ${xs.length} file${xs.length === 1 ? "" : "s"}` : "No tab has text") },
       bk: () => { const n = `notepad-backup-${new Date().toISOString().slice(0, 10)}.json`; dlF(n, JSON.stringify({ app: "rough-notepad", v: 1, F, tabs: S.tabs, closed: S.closed }), "application/json"); toast(`rPad saved a backup of ${S.tabs.length} tabs to ${n}`) },
       open: () => { if (DESK) return dPick(); FOM = ""; $("#fop").accept = ""; $("#fop").click() },
       rs: () => { FOM = "bk"; $("#fop").accept = ".json"; $("#fop").click() },
@@ -1172,8 +1217,13 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
     function restore(s) {
       let d; try { d = JSON.parse(s) } catch (e) { } if (!d || !Array.isArray(d.tabs)) return toast("This file is not an rPad backup");
       const fm = (d.F || []).map(f => { let k = F.findIndex(g => g.n === f.n && !g.h); if (k < 0) { F.push({ n: f.n, p: f.p || "Documents/" + f.n, ok: 1, c: f.c || "purple" }); k = F.length - 1 } return k });
-      const have = new Set(S.tabs.map(x => x.t)), at = S.tabs.length;
-      d.tabs.forEach(x => { if (typeof x.t === "string" && x.t.trim() && !have.has(x.t)) { have.add(x.t); S.tabs.push({ t: x.t, f: fm[x.f] ?? 0, n: x.n, x: x.x, s: x.s, m: x.m }) } });
+      // the same note = the same folder, name and text (the same text in two folders is two notes)
+      const key = x => [x.f, x.n || "", x.t].join("\0"), have = new Set(S.tabs.map(key)), at = S.tabs.length;
+      const mk = x => ({ t: x.t, f: fm[x.f] ?? 0, n: x.n, x: x.x, s: x.s, m: x.m });
+      d.tabs.forEach(x => { if (typeof x.t !== "string" || !(x.t.trim() || x.n)) return; const y = mk(x); if (!have.has(key(y))) { have.add(key(y)); S.tabs.push(y) } });
+      // History: closed notes that are not there yet
+      const hv = new Set(S.closed.map(key));
+      (d.closed || []).forEach(x => { if (typeof x.t !== "string" || !(x.t.trim() || x.n)) return; const y = { ...mk(x), d: x.d || "Just now" }; if (!hv.has(key(y))) { hv.add(key(y)); S.closed.push(y) } });
       const n = S.tabs.length - at; if (n) S.cur = at; swv(false); show(true); toast(n ? `rPad opened ${n} tab${n === 1 ? "" : "s"} from the backup` : "These tabs are already open")
     }
     $("#fop").onchange = e => {
@@ -1321,7 +1371,7 @@ ${S.tabs.length > 1 ? `<button class="${RW}" data-a="tco" data-i="${i}">${ic("ta
       const k = e.key.toLowerCase(), c = e.ctrlKey || e.metaKey;
       const f = e.key === "F2" ? MBA.ren : e.key === "F1" || (c && e.shiftKey && k === "p") ? () => qpOpen(">") : c && !e.shiftKey && !e.altKey && k === "p" ? MBA.qo : e.altKey && !c && k === "z" ? () => { S.wrap = S.wrap === false; show() } : e.altKey && e.shiftKey && !c && k === "r" && DESK ? () => dRev(cur().f, cur().fp) : !c ? null :
         e.altKey ? (k === "n" ? ntAsk : null) :
-          e.shiftKey ? { f: MBA.sa, n: () => add(0) }[k] : { s: DESK ? MBA.save : MBA.dl, n: ntAsk, o: MBA.open, f: MBA.find, h: MBA.rpl, "=": MBA.zi, "+": MBA.zi, "-": MBA.zo }[k];
+          e.shiftKey ? { f: MBA.sa, n: () => add(0), "+": MBA.zi }[k] : { s: DESK ? MBA.save : MBA.dl, n: ntAsk, o: MBA.open, f: MBA.find, h: MBA.rpl, "=": MBA.zi, "+": MBA.zi, "-": MBA.zo }[k];
       if (f && !shOpen()) { e.preventDefault(); f() }
     });
     // Ctrl+B shows or hides the sidebar, like VS Code
