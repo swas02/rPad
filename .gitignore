@@ -42,3 +42,6 @@ Thumbs.db
 # Tauri
 src-tauri/target/
 src-tauri/gen/
+
+# End-to-end suite output
+test/e2e

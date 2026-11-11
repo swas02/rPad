@@ -804,10 +804,15 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
     }
     const dErr = e => toast(e === "binary" ? "This is not a text file" : e === "big" ? "The file is too large. The maximum size is 5 MB." : "Cannot open the file");
     // done: runs once the file is open (History uses it to drop its entry only when the file opened)
+    const dOpening = [];
     function dOpen(k, name, done) {
-      const i = S.tabs.findIndex(x => x.f === k && x.fp === name); if (i >= 0) { done?.(); setH("#note-" + tid(S.tabs[i])); return render() }
+      const same = x => x.f === k && x.fp.toLowerCase() === name.toLowerCase(), i = S.tabs.findIndex(x => x.fp && same(x));
+      if (i >= 0) { done?.(); setH("#note-" + tid(S.tabs[i])); return render() }
+      // the same file twice in one call: the first read is not done yet, so its tab is not there; wait for it
+      const w = dOpening.find(same); if (w) return w.p.then(() => dOpen(k, name, done), () => 0)
       const t = { t: "", f: k, fp: name }; [t.n, t.x] = splitN(name);
-      dRead(t).then(() => { done?.(); S.tabs.push(t); toRecent(t); setH("#note-" + tid(t)); render() }, dErr)
+      const o = { f: k, fp: name, p: dRead(t) }; dOpening.push(o);
+      o.p.then(() => { done?.(); S.tabs.push(t); toRecent(t); setH("#note-" + tid(t)); render() }, dErr).finally(() => dOpening.splice(dOpening.indexOf(o), 1))
     }
     // the window got focus: pick up files added, removed or edited by other apps
     let dBusy = 0;
@@ -865,14 +870,18 @@ ${tg(["ts", `Name new files with date and time<small class="${SM}">Off: new file
       }, () => toast("Cannot open the file dialog"))
     }
     // open files in place (used by Open file and by the Open API)
-    function dFiles(ps) {
-      for (const p of ps) { const i = Math.max(p.lastIndexOf("\\"), p.lastIndexOf("/")), d = p.slice(0, i), k = dFolder(/^[a-z]:$/i.test(d) ? d + "\\" : d, 1); dOpen(k, p.slice(i + 1)) }
+    // at: {line, col} for the last file (file:line from the Open API)
+    function dFiles(ps, at) {
+      for (const p of ps) { const i = Math.max(p.lastIndexOf("\\"), p.lastIndexOf("/")), d = p.slice(0, i), k = dFolder(/^[a-z]:$/i.test(d) ? d + "\\" : d, 1); dOpen(k, p.slice(i + 1), at && p === ps[ps.length - 1] ? () => setTimeout(() => ed.goto(at.line, at.col || 1), 50) : undefined) }
       keep(); show()
     }
-    // Open API: `rpad <file|folder>...`, "Open with", double-click. Files open in place; the last folder is selected, like Open folder.
+    // Open API: `rpad <file[:line]|folder>...`, `--new`, `-` (stdin), "Open with", double-click. Files open in place; the last folder is selected, like Open folder.
     function dArgs(a) {
-      const fs = a.filter(x => x.kind === "file").map(x => x.path), ds = a.filter(x => x.kind === "folder");
-      if (fs.length) dFiles(fs);
+      const fs = a.filter(x => x.kind === "file"), ds = a.filter(x => x.kind === "folder");
+      for (const x of a) if (x.kind === "missing") toast(`Cannot find ${x.path}`);
+      // --new and - (stdin): a new note, with the text when there is some
+      for (const x of a) if (x.kind === "new" || x.kind === "text") { add(); if (x.text) { cur().t = x.text; dSave(cur()); keep(); show(true) } }
+      if (fs.length) dFiles(fs.map(x => x.path), fs[fs.length - 1].line ? fs[fs.length - 1] : null);
       if (ds.length) { const k = dFolder(ds[ds.length - 1].path); SF = k; SX.add(k); S.sbh = 0; S.sp = "e"; app.classList.remove("sbh"); close(); keep(); show(); dScan(k) }
     }
     function fSheet(fi, mv) {

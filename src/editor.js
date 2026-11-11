@@ -185,6 +185,8 @@ export function create({ parent, onText, onSelect, onFind }) {
       view.dispatch(view.state.changeByRange(r => ({ changes: { from: r.from, to: r.to, insert: t }, range: EditorSelection.cursor(r.from + t.length) })), { scrollIntoView: true, userEvent: t ? "input.paste" : "delete.cut" }); return true
     },
     select: show,
+    // put the cursor on a line (1 is the first) and column; a number past the end goes to the last line or the end of the line
+    goto(line, col = 1) { const d = view.state.doc, l = d.line(Math.min(Math.max(line, 1), d.lines)); show(l.from + Math.min(Math.max(col, 1) - 1, l.length)); view.focus() },
     // { from, to, ln, col } for the status bar
     sel() { const r = sel(), l = doc().lineAt(r.to); return { from: r.from, to: r.to, ln: l.number, col: r.to - l.from + 1 } },
 

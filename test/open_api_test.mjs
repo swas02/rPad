@@ -35,3 +35,19 @@ describe("Open API", () => {
   });
   test("Open file and the API share one function", () => assert.match(html, /function dFiles/));
 });
+
+describe("Open API options", () => {
+  test("--new, - (stdin), file:line, --version and --help are handled in Rust", () => {
+    for (const w of ['"--new"', '"-"', "split_pos", '"--version"', '"--help"']) assert.ok(rust.includes(w), w);
+  });
+  test("the page opens a new note and goes to a line", () => {
+    assert.match(html, /x\.kind === "new"/);
+    assert.match(html, /ed\.goto\(/);
+    assert.match(read("src/editor.js"), /goto\(line/);
+  });
+  test("the installer adds rPad to PATH", () => {
+    assert.equal(conf.bundle.windows.nsis.installerHooks, "installer-hooks.nsh");
+    assert.match(read("src-tauri/installer-hooks.nsh"), /HKCU "Environment" "Path"/);
+  });
+});
+

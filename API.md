@@ -8,13 +8,18 @@ rPad is a plain-text notepad. This file lists every interface a script, the OS o
 |---|---|
 | `rpad <path>...` | Opens each file in place. A folder joins the Library and is selected (like "Open folder"). |
 | `rpad` | Starts rPad, or focuses the running window. |
+| `rpad <file>:<line>[:<col>]` | Opens the file and puts the cursor on the line (and column). |
+| `rpad -n`, `rpad --new` | Opens a new empty note. |
+| `rpad -` | Opens a new note with the text from stdin: `type a.txt \| rpad -`. |
+| `rpad -V`, `rpad --version` | Prints the version. |
+| `rpad -h`, `rpad --help` | Prints the help. |
 
 - A path can be relative (to the folder where you run the command) or absolute.
 - A path that does not exist is skipped without a message.
-- An argument that starts with `-` is ignored, so later versions can add options.
+- Any other argument that starts with `-` is ignored, so later versions can add options.
 - If rPad is already open, the paths go to the running window. No second window opens (single-instance).
 - A folder gives access to its files, not its subfolders. A file gives access to its folder.
-- `rpad` works in a terminal only when the install folder is on `PATH`. The installer does not do this yet.
+- `rpad` works in a terminal when the install folder is on `PATH`. The installer adds it (`src-tauri/installer-hooks.nsh`); open a new terminal after the install.
 
 ### Windows shell
 
@@ -31,7 +36,7 @@ Called from the page with `invoke`. Source: `src-tauri/src/lib.rs`.
 | `pick_files` | none | Shows the Open file dialog. Returns full paths. The folders of the picked files get access. |
 | `history_add` | `path` (array of parts) | Adds a closed file to `history.json`. |
 | `history_remove` | `path?` | Removes one entry, or all entries when no path is given. |
-| `take_open` | none | Returns and clears the paths waiting from the Open API: `[{ kind: "file" \| "folder", path }]`. |
+| `take_open` | none | Returns and clears the items waiting from the Open API: `{ kind: "file" \| "folder", path, line?, col? }`, `{ kind: "new" }` or `{ kind: "text", text }`. |
 
 ## 3. Events
 
@@ -51,7 +56,7 @@ Source: `src/tauri.js`.
 | `pin(on)` | Keep on top. |
 | `pickFiles()` | Open file dialog. |
 | `logClosed(path)`, `unlogClosed(path?)` | Write or remove History entries. |
-| `onOpen(cb)` | `cb([{ kind, path }])` for the paths of this start and each later start. |
+| `onOpen(cb)` | `cb([item])` (items as in `take_open`) for the items of this start and each later start. |
 | `fs`, `dialog` (`open`, `ask`), `path` (`join`), `opener` (`revealItemInDir`), `os` (`platform`) | Tauri plugin wrappers. |
 
 ## 5. Tauri plugins and permissions
@@ -72,13 +77,9 @@ Plain text only. There are no rich-text styles.
 
 ## 7. Editor engine (`src/editor.js`, built to `editor.js`)
 
-Methods: `dom`, `measure`, `hasFocus`, `text`, `open`, `keepOnly`, `set`, `remeasure`, `undo`, `selectAll`, `selText`, `replaceSel`, `select`, `sel`, `format`, `cleanup`.
+Methods: `goto(line, col)`, `dom`, `measure`, `hasFocus`, `text`, `open`, `keepOnly`, `set`, `remeasure`, `undo`, `selectAll`, `selText`, `replaceSel`, `select`, `sel`, `format`, `cleanup`.
 Callbacks: `onText`, `onSelect`, `onFind`.
 
 ## 8. Themes (`src/themes.js`, on `window`)
 
 `THEMES`, `themeColors`, `applyPalette`, `paletteHex`, `accentHex`, `bootDone`.
-
-## Planned (not built)
-
-`--new`, `file:line`, `--version`, `--help`, `-` (read stdin), and a `PATH` entry from the installer.
