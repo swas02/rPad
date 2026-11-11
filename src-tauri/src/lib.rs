@@ -1,17 +1,31 @@
+use std::path::Path;
 use std::sync::Mutex;
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 
 // All file access goes through the official Tauri plugins. The dialog plugin adds each folder you pick to the fs scope,
 // and persisted-scope remembers those folders between runs, so the page can only touch folders you chose.
 pub fn run() {
     tauri::Builder::default()
+        // Open API, one path for every way to start rPad: `rpad file.txt folder`, "Open with" and double-click in Explorer.
+        // A second start does not open a second app: it sends its arguments to the running one and exits (single-instance).
+        // It must be the first plugin.
+        .plugin(tauri_plugin_single_instance::init(|app, args, cwd| {
+            queue(app, args.iter().skip(1), Path::new(&cwd));
+            if let Some(w) = app.get_webview_window("main") { let _ = w.unminimize(); let _ = w.show(); let _ = w.set_focus(); }
+        }))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_persisted_scope::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_os::init())
         .manage(Caption(Mutex::new(None)))
-        .invoke_handler(tauri::generate_handler![caption, pick_files, history_add, history_remove])
+        .manage(Pending(Mutex::new(vec![])))
+        .setup(|app| {
+            // the arguments of this start; the page is not ready yet, so they wait in Pending until the page calls take_open
+            queue(app.handle(), std::env::args().skip(1), &std::env::current_dir().unwrap_or_default());
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![caption, pick_files, history_add, history_remove, take_open])
         // the window gets or loses focus: paint the title bar again (the title text is grey when the window is not active)
         .on_window_event(|w, e| {
             if let tauri::WindowEvent::Focused(f) = e {
@@ -20,6 +34,36 @@ pub fn run() {
         })
         .run(tauri::generate_context!())
         .expect("error while running rPad");
+}
+
+// Files and folders from the command line or the shell, waiting for the page: {"kind": "file" | "folder", "path": "..."}
+struct Pending(Mutex<Vec<serde_json::Value>>);
+
+// Turns each argument into a full path (a relative path starts at cwd), keeps only paths that exist, and gives the page access:
+// a folder gets access to its files (not its subfolders), a file gets access to its folder. Then it tells the page ("open-paths").
+// Options (-x, --x) are ignored, so a later version can add them without breaking old scripts.
+fn queue(app: &tauri::AppHandle, args: impl IntoIterator<Item = impl AsRef<str>>, cwd: &Path) {
+    use tauri_plugin_fs::FsExt;
+    let mut items = vec![];
+    for a in args.into_iter().filter(|a| !a.as_ref().starts_with('-') && !a.as_ref().is_empty()) {
+        let a = a.as_ref();
+        // cwd.join keeps an absolute argument as it is; std::path::absolute cleans the path and adds no \?\ prefix
+        let Ok(full) = std::path::absolute(cwd.join(a)) else { continue };
+        if !full.exists() { continue }
+        let (kind, dir) = if full.is_dir() { ("folder", Some(full.as_path())) } else { ("file", full.parent()) };
+        if dir.is_some_and(|d| app.fs_scope().allow_directory(d, false).is_ok()) {
+            items.push(serde_json::json!({ "kind": kind, "path": full.to_string_lossy() }));
+        }
+    }
+    if items.is_empty() { return }
+    app.state::<Pending>().0.lock().unwrap().extend(items);
+    let _ = app.emit("open-paths", ());
+}
+
+// The page asks for the waiting paths (at start, and each time it gets "open-paths"). The list is empty after this call.
+#[tauri::command]
+fn take_open(state: tauri::State<Pending>) -> Vec<serde_json::Value> {
+    std::mem::take(&mut *state.0.lock().unwrap())
 }
 
 // Open file: the native dialog, then the folder of each picked file joins the fs scope (without subfolders), so the file

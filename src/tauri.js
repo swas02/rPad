@@ -4,6 +4,7 @@ import { join } from "@tauri-apps/api/path";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { platform } from "@tauri-apps/plugin-os";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 // paint the native title bar in this colour (#rrggbb); see caption() in src-tauri/src/lib.rs
 export const caption = color => invoke("caption", { color }).catch(() => {});
@@ -18,6 +19,13 @@ export const pickFiles = () => invoke("pick_files");
 // no path: clear the whole file; a path: remove every entry with that path
 export const unlogClosed = path => invoke("history_remove", { path: path || null }).catch(() => {});
 export const logClosed = path => invoke("history_add", { path }).catch(() => {});
+// Open API: cb gets [{ kind: "file" | "folder", path }] from `rpad <path>...`, "Open with" and double-click; see queue() in src-tauri/src/lib.rs
+// It runs for the paths of this start and for each later start (the running window gets them, no second window opens).
+export const onOpen = cb => {
+  const take = () => invoke("take_open").then(a => a.length && cb(a)).catch(() => {});
+  listen("open-paths", take).catch(() => {});
+  take();
+};
 export const dialog = { open, ask };
 export const path = { join };
 export const opener = { revealItemInDir };

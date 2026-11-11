@@ -7,6 +7,8 @@
     "core:path:allow-join",
     "core:window:allow-set-title",
     "core:window:allow-set-always-on-top",
+    "core:event:allow-listen",
+    "core:event:allow-unlisten",
     "core:window:allow-show",
     "core:window:allow-set-focus",
     "dialog:allow-open",
